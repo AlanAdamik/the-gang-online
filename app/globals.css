@@ -199,7 +199,7 @@ h1 em, h2 em { font-weight: 400; color: #9a7543; }
 .token-history table { width: 100%; min-width: 360px; border-collapse: collapse; text-align: center; }
 .token-history th, .token-history td { padding: 8px 10px; border-top: 1px solid #e9e4da; font-size: 11px; }
 .token-history th { color: #77776d; font-weight: 600; }
-.token-history td:first-child, .token-history th:first-child { position: sticky; left: 0; color: #555d51; background: #f8f6ef; text-align: left; }
+.token-history tbody th[scope="row"] { position: sticky; left: 0; color: #555d51; background: #f8f6ef; text-align: left; }
 .token-history-token { display: inline-flex; min-width: 28px; min-height: 28px; align-items: center; justify-content: center; border: 1px solid #d9c7a7; border-radius: 50%; color: #483a26; background: #f1e5c7; font-weight: 700; }
 .token-history-empty { color: #aaa79b; }
 

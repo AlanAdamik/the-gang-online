@@ -91,13 +91,13 @@ function TokenHistory({ room }: { room: GameFlowProps['room'] }) {
   return <section className="token-history" aria-label="Token picks by round and player">
     <div className="token-history-heading"><strong>Token history</strong><span>Assignments update when a token is stolen.</span></div>
     <table>
-      <caption className="sr-only">Each player’s final token assignment in each round</caption>
-      <thead><tr><th scope="col">Round</th>{room.players.map((player) => <th scope="col" key={player.id}>{player.name}</th>)}</tr></thead>
-      <tbody>{[1, 2, 3, 4].map((round) => <tr key={round}>
-        <th scope="row">{round}</th>
-        {room.players.map((player) => {
+      <caption className="sr-only">Each player’s final token assignment across rounds, from left to right</caption>
+      <thead><tr><th scope="col">Player</th>{[1, 2, 3, 4].map((round) => <th scope="col" key={round}>Round {round}</th>)}</tr></thead>
+      <tbody>{room.players.map((player) => <tr key={player.id}>
+        <th scope="row">{player.name}</th>
+        {[1, 2, 3, 4].map((round) => {
           const pick = history.find((entry) => entry.round === round && entry.playerId === player.id)
-          return <td key={player.id}>{pick ? <span className="token-history-token">{pick.value}</span> : <span className="token-history-empty" aria-label="No token picked">—</span>}</td>
+          return <td key={round}>{pick ? <span className="token-history-token">{pick.value}</span> : <span className="token-history-empty" aria-label="No token picked">—</span>}</td>
         })}
       </tr>)}</tbody>
     </table>
