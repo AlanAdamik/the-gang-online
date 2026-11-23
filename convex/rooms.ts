@@ -3,6 +3,7 @@ import type { MutationCtx, QueryCtx } from './_generated/server'
 import { v } from 'convex/values'
 
 const tokenPickValidator = v.object({ round: v.number(), value: v.number() })
+const tokenHistoryValidator = v.object({ round: v.number(), playerId: v.string(), value: v.number() })
 const playerValidator = v.object({
   id: v.string(),
   name: v.string(),
@@ -43,6 +44,7 @@ const roomValidator = v.object({
   challengeChecks: v.optional(v.array(v.number())),
   completedChallengeChecks: v.optional(v.array(v.number())),
   tokenStealNotice: v.optional(v.object({ targetPlayerId: v.string(), thiefName: v.string(), value: v.number(), createdAt: v.number() })),
+  tokenHistory: v.optional(v.array(tokenHistoryValidator)),
 })
 
 const challengeNames = [
@@ -272,6 +274,7 @@ export const startGame = mutation({
     }
     await ctx.db.patch(room._id, {
       players: dealtPlayers,
+      tokenHistory: [],
       status: 'playing',
       mode,
       round,
@@ -321,8 +324,12 @@ export const pickToken = mutation({
       ? picks.map((pick) => pick.round === room.round ? { ...pick, value } : pick)
       : [...picks, { round: room.round, value }]
     const tokenStealNotice = previousOwner ? { targetPlayerId: previousOwner.id, thiefName: player.name, value, createdAt: Date.now() } : undefined
+    const tokenHistory = [
+      ...(room.tokenHistory ?? []).filter((entry: any) => entry.round !== room.round || (entry.playerId !== playerId && entry.playerId !== previousOwner?.id)),
+      { round: room.round, playerId, value },
+    ]
     if (!players.every((item: any) => item.tokenPicks.some((pick: any) => pick.round === room.round))) {
-      await ctx.db.patch(room._id, { players, tokenStealNotice })
+      await ctx.db.patch(room._id, { players, tokenStealNotice, tokenHistory })
       return null
     }
 
@@ -370,6 +377,7 @@ export const pickToken = mutation({
       await ctx.db.patch(room._id, {
         players,
         tokenStealNotice,
+        tokenHistory,
         phase: challengeChecks.length ? 'challenge' : 'reveal',
         revealOrder,
         deck,
@@ -384,7 +392,7 @@ export const pickToken = mutation({
       const previousRound = activeChallengeCards.includes(5) && room.round === 2 ? 2 : round - 1
       for (const item of players as any[]) item.tokenPicks = item.tokenPicks.filter((pick: any) => pick.round !== previousRound)
     }
-    await ctx.db.patch(room._id, { players, round, phase: 'ranking', deck, communityCards, tokenStealNotice })
+    await ctx.db.patch(room._id, { players, round, phase: 'ranking', deck, communityCards, tokenStealNotice, tokenHistory })
     return null
   },
 })
@@ -542,6 +550,7 @@ export const startNextHeist = mutation({
       phase: 'ranking',
       round,
       players,
+      tokenHistory: [],
       deck,
       communityCards,
       revealOrder: [],

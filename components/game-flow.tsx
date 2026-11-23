@@ -26,6 +26,7 @@ type GameFlowProps = {
     challengeChecks?: number[]
     completedChallengeChecks?: number[]
     tokenStealNotice?: { targetPlayerId: string; thiefName: string; value: number; createdAt: number }
+    tokenHistory?: { round: number; playerId: string; value: number }[]
     players: { id: string; name: string; cards: number[]; tokenPicks?: { round: number; value: number }[] }[]
   }
   playerId: string
@@ -82,10 +83,32 @@ function modeCopy(mode: GameFlowProps['room']['mode']) {
   return 'Start with no modifiers. A win adds a Challenge to the next heist; a loss earns a Specialist.'
 }
 
+function TokenHistory({ room }: { room: GameFlowProps['room'] }) {
+  const history = room.tokenHistory ?? room.players.flatMap((player) =>
+    (player.tokenPicks ?? []).map((pick) => ({ ...pick, playerId: player.id })),
+  )
+
+  return <section className="token-history" aria-label="Token picks by round and player">
+    <div className="token-history-heading"><strong>Token history</strong><span>Assignments update when a token is stolen.</span></div>
+    <table>
+      <caption className="sr-only">Each player’s final token assignment in each round</caption>
+      <thead><tr><th scope="col">Round</th>{room.players.map((player) => <th scope="col" key={player.id}>{player.name}</th>)}</tr></thead>
+      <tbody>{[1, 2, 3, 4].map((round) => <tr key={round}>
+        <th scope="row">{round}</th>
+        {room.players.map((player) => {
+          const pick = history.find((entry) => entry.round === round && entry.playerId === player.id)
+          return <td key={player.id}>{pick ? <span className="token-history-token">{pick.value}</span> : <span className="token-history-empty" aria-label="No token picked">—</span>}</td>
+        })}
+      </tr>)}</tbody>
+    </table>
+  </section>
+}
+
 export function GameFlow({ room, playerId }: GameFlowProps) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [guess, setGuess] = useState('')
+  const [dismissedStealNoticeAt, setDismissedStealNoticeAt] = useState<number | null>(null)
   const chooseMode = useMutation(api.rooms.chooseMode)
   const pickToken = useMutation(api.rooms.pickToken)
   const revealNextHand = useMutation(api.rooms.revealNextHand)
@@ -166,6 +189,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
           </div>
         })}
       </div>
+      <TokenHistory room={room}/>
       {error && <p className="error-message" role="alert">{error}</p>}
     </section>
   }
@@ -192,6 +216,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
         <p className="guess-hint">Talk it through together, then the host locks in one answer. A wrong guess triggers an alarm.</p>
       </div>
       <div className="showdown-board"><span>SHARED BOARD</span>{board.map((card) => <Card value={card} small key={`board-${card}`}/>)}</div>
+      <TokenHistory room={room}/>
       {error && <p className="error-message" role="alert">{error}</p>}
     </section>
   }
@@ -213,6 +238,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
         {nextPlayer && <button className="button button-primary full-button" disabled={!isHost || busy} onClick={() => void run(() => revealNextHand({ code: room.code, playerId }))}>{busy ? <LoaderCircle className="spin" size={16}/> : <Eye size={16}/>} {isHost ? `Reveal ${nextPlayer.name}’s hand` : 'Waiting for the host to reveal'}</button>}
       </div>
       <div className="showdown-board"><span>SHARED BOARD</span>{board.map((card) => <Card value={card} small key={`board-${card}`}/>)}</div>
+      <TokenHistory room={room}/>
       {error && <p className="error-message" role="alert">{error}</p>}
     </section>
   }
@@ -225,7 +251,11 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
       <div className="board-caption"><span>SHARED BOARD</span><span>{board.length ? `${board.length} of 5 cards` : 'The flop is coming after this round'}</span></div>
       <div className="community-row">{board.length ? board.map((card) => <Card value={card} small key={card}/>) : <span className="board-placeholder">Community cards appear here for everyone.</span>}</div>
     </div>
-    {stealNotice && <p className="token-stolen-alert" role="alert">Your token {stealNotice.value} was taken by {stealNotice.thiefName}. Choose another token to stay in the round.</p>}
+    <TokenHistory room={room}/>
+    {stealNotice && dismissedStealNoticeAt !== stealNotice.createdAt && <div className="token-stolen-toast" role="alert" aria-live="assertive">
+      <span><strong>Your token was stolen</strong>Token {stealNotice.value} was taken by {stealNotice.thiefName}. Choose another to stay in the round.</span>
+      <button type="button" aria-label="Dismiss token stolen notification" onClick={() => setDismissedStealNoticeAt(stealNotice.createdAt)}>×</button>
+    </div>}
     <p className="round-guidance">{stageMessage}</p>
     {me?.cards.length ? <div className="private-hand"><span>YOUR PRIVATE CARDS <small>keep these to yourself</small></span><div>{me.cards.map((card) => <Card value={card} key={card}/>)}</div></div> : null}
     <div className={`token-picker token-picker-${colorName}`}>

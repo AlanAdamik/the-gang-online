@@ -170,7 +170,21 @@ h1 em, h2 em { font-weight: 400; color: #9a7543; }
   .token-note { margin: 9px 0 0; color: #89887e; font-size: 9px; line-height: 1.45; }
   .token-picker .rank-token.is-taken { cursor: pointer; opacity: 1; border-color: #e5b9ae; color: #9d493d; background: #fff3ef; }
   .token-picker .rank-token.is-taken span { color: #a44c40; }
-  .token-stolen-alert { margin: 0; padding: 10px 12px; border: 1px solid #e8b9b0; border-radius: 4px; color: #963f35; background: #fff0ed; font-size: 11px; line-height: 1.5; }
+  .token-stolen-toast { position: fixed; z-index: 50; top: 18px; left: 50%; width: min(440px, calc(100vw - 28px)); display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 16px 18px; border: 1px solid #7a211d; border-radius: 8px; color: #fff; background: #b42318; box-shadow: 0 12px 34px #2e0b0b55; font-size: 14px; line-height: 1.5; transform: translateX(-50%); animation: token-toast-enter 180ms ease-out; }
+.token-stolen-toast strong { display: block; margin-bottom: 2px; font-size: 15px; }
+.token-stolen-toast button { flex: 0 0 auto; border: 0; border-radius: 4px; padding: 2px 7px; color: inherit; background: transparent; font: inherit; font-size: 20px; line-height: 1; cursor: pointer; }
+.token-stolen-toast button:hover { background: #ffffff24; }
+@keyframes token-toast-enter { from { opacity: 0; transform: translate(-50%, -8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.token-history { width: 100%; overflow: auto; border: 1px solid #e5e0d5; border-radius: 5px; background: #fffdf8; }
+.token-history-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 12px 13px 8px; }
+.token-history-heading strong { font: 600 14px Georgia,serif; }
+.token-history-heading span { color: #929186; font-size: 10px; }
+.token-history table { width: 100%; min-width: 360px; border-collapse: collapse; text-align: center; }
+.token-history th, .token-history td { padding: 8px 10px; border-top: 1px solid #e9e4da; font-size: 11px; }
+.token-history th { color: #77776d; font-weight: 600; }
+.token-history td:first-child, .token-history th:first-child { position: sticky; left: 0; color: #555d51; background: #f8f6ef; text-align: left; }
+.token-history-token { display: inline-flex; min-width: 28px; min-height: 28px; align-items: center; justify-content: center; border: 1px solid #d9c7a7; border-radius: 50%; color: #483a26; background: #f1e5c7; font-weight: 700; }
+.token-history-empty { color: #aaa79b; }
 
 .active-modifier-strip { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; padding: 8px 10px; border-radius: 4px; color: #876f4b; background: #f3eee3; font-size: 9px; }
 .active-modifier-strip strong { color: #5d5748; font-size: 9px; }

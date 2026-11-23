@@ -6,6 +6,12 @@ const tokenPick = v.object({
   value: v.number(),
 })
 
+const tokenHistoryEntry = v.object({
+  round: v.number(),
+  playerId: v.string(),
+  value: v.number(),
+})
+
 const player = v.object({
   id: v.string(),
   name: v.string(),
@@ -54,6 +60,7 @@ export default defineSchema({
     challengeChecks: v.optional(v.array(v.number())),
     completedChallengeChecks: v.optional(v.array(v.number())),
     tokenStealNotice: v.optional(tokenStealNotice),
+    tokenHistory: v.optional(v.array(tokenHistoryEntry)),
   })
     .index('by_code', ['code'])
     .index('by_created_at', ['createdAt']),
