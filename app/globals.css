@@ -167,7 +167,11 @@ h1 em, h2 em { font-weight: 400; color: #9a7543; }
 .token-picker-yellow .rank-token.is-selected { border-color: #aa884e; color: #332b1e; background: #e7d39a; }
 .token-picker-orange .rank-token.is-selected { border-color: #aa6640; color: #fffaf1; background: #bd754c; }
 .token-picker-red .rank-token.is-selected { border-color: #91483f; color: #fffaf1; background: #a85447; }
-.token-note { margin: 9px 0 0; color: #89887e; font-size: 9px; line-height: 1.45; }
+  .token-note { margin: 9px 0 0; color: #89887e; font-size: 9px; line-height: 1.45; }
+  .token-picker .rank-token.is-taken { cursor: pointer; opacity: 1; border-color: #e5b9ae; color: #9d493d; background: #fff3ef; }
+  .token-picker .rank-token.is-taken span { color: #a44c40; }
+  .token-stolen-alert { margin: 0; padding: 10px 12px; border: 1px solid #e8b9b0; border-radius: 4px; color: #963f35; background: #fff0ed; font-size: 11px; line-height: 1.5; }
+
 .active-modifier-strip { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; padding: 8px 10px; border-radius: 4px; color: #876f4b; background: #f3eee3; font-size: 9px; }
 .active-modifier-strip strong { color: #5d5748; font-size: 9px; }
 .active-modifier-strip > svg { color: #a55347; }

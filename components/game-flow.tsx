@@ -25,6 +25,7 @@ type GameFlowProps = {
     pendingSpecialistCard?: number
     challengeChecks?: number[]
     completedChallengeChecks?: number[]
+    tokenStealNotice?: { targetPlayerId: string; thiefName: string; value: number; createdAt: number }
     players: { id: string; name: string; cards: number[]; tokenPicks?: { round: number; value: number }[] }[]
   }
   playerId: string
@@ -95,6 +96,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
   const currentPick = me?.tokenPicks?.find((pick) => pick.round === room.round)
   const availableTokens = Array.from({ length: room.players.length }, (_, index) => index + 1)
   const takenTokens = room.players.flatMap((player) => player.id === playerId ? [] : (player.tokenPicks ?? []).filter((pick) => pick.round === room.round).map((pick) => pick.value))
+  const stealNotice = room.tokenStealNotice?.targetPlayerId === playerId ? room.tokenStealNotice : undefined
   const lockedToken = room.activeChallengeCards?.includes(2) && room.round <= 3 ? 1 : room.activeChallengeCards?.includes(6) && room.round <= 3 ? room.players.length : null
   const revealOrder = room.revealOrder ?? []
   const reveals = room.reveals ?? []
@@ -223,19 +225,20 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
       <div className="board-caption"><span>SHARED BOARD</span><span>{board.length ? `${board.length} of 5 cards` : 'The flop is coming after this round'}</span></div>
       <div className="community-row">{board.length ? board.map((card) => <Card value={card} small key={card}/>) : <span className="board-placeholder">Community cards appear here for everyone.</span>}</div>
     </div>
+    {stealNotice && <p className="token-stolen-alert" role="alert">Your token {stealNotice.value} was taken by {stealNotice.thiefName}. Choose another token to stay in the round.</p>}
     <p className="round-guidance">{stageMessage}</p>
     {me?.cards.length ? <div className="private-hand"><span>YOUR PRIVATE CARDS <small>keep these to yourself</small></span><div>{me.cards.map((card) => <Card value={card} key={card}/>)}</div></div> : null}
     <div className={`token-picker token-picker-${colorName}`}>
       <div className="token-picker-heading"><strong>Where do you rank?</strong><span>1 is lowest · {room.players.length} is highest</span></div>
       <div className="token-options">{availableTokens.map((value) => {
         const taken = takenTokens.includes(value)
-        const locked = currentPick?.value === lockedToken && currentPick.value !== value
+        const locked = (value === lockedToken && taken) || (currentPick?.value === lockedToken && currentPick.value !== value)
         const selected = currentPick?.value === value
-        return <button key={value} className={`rank-token ${selected ? 'is-selected' : ''} ${taken ? 'is-taken' : ''}`} aria-pressed={selected} disabled={busy || (taken && !selected) || locked} onClick={() => void run(() => pickToken({ code: room.code, playerId, value }))}>
-          {selected ? <Check size={14}/> : value}<span>{selected ? 'Your pick' : value === 1 ? 'Lowest' : value === room.players.length ? 'Highest' : 'Rank'}</span>
+        return <button key={value} className={`rank-token ${selected ? 'is-selected' : ''} ${taken ? 'is-taken' : ''}`} aria-pressed={selected} disabled={busy || locked} onClick={() => void run(() => pickToken({ code: room.code, playerId, value }))}>
+          {selected ? <Check size={14}/> : value}<span>{selected ? 'Your pick' : taken ? 'Steal' : value === 1 ? 'Lowest' : value === room.players.length ? 'Highest' : 'Rank'}</span>
         </button>
       })}</div>
-      <p className="token-note">{currentPick ? `You chose token ${currentPick.value}. You can change it until everyone has ranked.` : 'Choose one token. Each value can only be claimed once per round.'}</p>
+      <p className="token-note">{currentPick ? `You chose token ${currentPick.value}. You can change it until everyone has ranked.` : 'Choose a token. You can take one from another player, who will need to choose again.'}</p>
     </div>
     {error && <p className="error-message" role="alert">{error}</p>}
     <div className="mode-footnote">{modeCopy(room.mode)}</div>

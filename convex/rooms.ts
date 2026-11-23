@@ -42,6 +42,7 @@ const roomValidator = v.object({
   specialistDeck: v.optional(v.array(v.number())),
   challengeChecks: v.optional(v.array(v.number())),
   completedChallengeChecks: v.optional(v.array(v.number())),
+  tokenStealNotice: v.optional(v.object({ targetPlayerId: v.string(), thiefName: v.string(), value: v.number(), createdAt: v.number() })),
 })
 
 const challengeNames = [
@@ -159,6 +160,7 @@ export const getRoom = query({
     const revealedIds = new Set((room.reveals ?? []).map((reveal: { playerId: string }) => reveal.playerId))
     return {
       ...room,
+      tokenStealNotice: room.tokenStealNotice?.targetPlayerId === playerId ? room.tokenStealNotice : undefined,
       players: room.players.map((player) => ({
         ...player,
         cards: player.id === playerId || revealedIds.has(player.id) ? player.cards : [],
@@ -309,14 +311,18 @@ export const pickToken = mutation({
     const active = room.activeChallengeCards ?? []
     const lockedValue = active.includes(2) && room.round <= 3 ? 1 : active.includes(6) && room.round <= 3 ? room.players.length : null
     if (currentPick && currentPick.value === lockedValue && currentPick.value !== value) throw new Error('This token is locked by the active challenge.')
-    if (players.some((item: any) => item.id !== playerId && (item.tokenPicks ?? []).some((pick: any) => pick.round === room.round && pick.value === value))) {
-      throw new Error('That token has already been taken this round.')
+    const previousOwner = players.find((item: any) => item.id !== playerId && (item.tokenPicks ?? []).some((pick: any) => pick.round === room.round && pick.value === value))
+    if (previousOwner) {
+      const ownerPick = previousOwner.tokenPicks.find((pick: any) => pick.round === room.round)
+      if (ownerPick?.value === lockedValue) throw new Error('That token is locked by the active challenge.')
+      previousOwner.tokenPicks = previousOwner.tokenPicks.filter((pick: any) => pick.round !== room.round)
     }
     player.tokenPicks = currentPick
       ? picks.map((pick) => pick.round === room.round ? { ...pick, value } : pick)
       : [...picks, { round: room.round, value }]
+    const tokenStealNotice = previousOwner ? { targetPlayerId: previousOwner.id, thiefName: player.name, value, createdAt: Date.now() } : undefined
     if (!players.every((item: any) => item.tokenPicks.some((pick: any) => pick.round === room.round))) {
-      await ctx.db.patch(room._id, { players })
+      await ctx.db.patch(room._id, { players, tokenStealNotice })
       return null
     }
 
@@ -363,6 +369,7 @@ export const pickToken = mutation({
       const challengeChecks = activeChallengeCards.filter((id) => id === 4 || id === 9)
       await ctx.db.patch(room._id, {
         players,
+        tokenStealNotice,
         phase: challengeChecks.length ? 'challenge' : 'reveal',
         revealOrder,
         deck,
@@ -377,7 +384,7 @@ export const pickToken = mutation({
       const previousRound = activeChallengeCards.includes(5) && room.round === 2 ? 2 : round - 1
       for (const item of players as any[]) item.tokenPicks = item.tokenPicks.filter((pick: any) => pick.round !== previousRound)
     }
-    await ctx.db.patch(room._id, { players, round, phase: 'ranking', deck, communityCards })
+    await ctx.db.patch(room._id, { players, round, phase: 'ranking', deck, communityCards, tokenStealNotice })
     return null
   },
 })

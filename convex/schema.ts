@@ -21,6 +21,13 @@ const reveal = v.object({
   score: v.number(),
 })
 
+const tokenStealNotice = v.object({
+  targetPlayerId: v.string(),
+  thiefName: v.string(),
+  value: v.number(),
+  createdAt: v.number(),
+})
+
 export default defineSchema({
   rooms: defineTable({
     code: v.string(),
@@ -46,6 +53,7 @@ export default defineSchema({
     specialistDeck: v.optional(v.array(v.number())),
     challengeChecks: v.optional(v.array(v.number())),
     completedChallengeChecks: v.optional(v.array(v.number())),
+    tokenStealNotice: v.optional(tokenStealNotice),
   })
     .index('by_code', ['code'])
     .index('by_created_at', ['createdAt']),
