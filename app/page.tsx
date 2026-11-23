@@ -14,7 +14,7 @@ function displayCard(value: number) {
   return { rank: ranks[normalized % 13], suit: suits[Math.floor(normalized / 13)], red: normalized >= 13 && normalized < 26 || normalized >= 39 }
 }
 
-export default function Page() {
+function GamePage() {
   const [screen, setScreen] = useState<Screen>('home')
   const [playerId, setPlayerId] = useState('')
   const [name, setName] = useState('')
@@ -154,4 +154,26 @@ export default function Page() {
       </section>}
     </main>
   )
+}
+
+export default function Page() {
+  if (!process.env.NEXT_PUBLIC_CONVEX_URL) {
+    return (
+      <main className="game-shell">
+        <header className="topbar">
+          <a className="brand" href="/" aria-label="The Gang home">
+            <span className="brand-mark"><Spade size={19} fill="currentColor" /></span>
+            <span>the gang<span className="brand-period">.</span></span>
+          </a>
+        </header>
+        <section className="service-message" role="status">
+          <span className="section-kicker">ONE QUICK SETUP</span>
+          <h1>The table is almost <em>ready.</em></h1>
+          <p>Connect this deployment to its Convex database by setting <code>NEXT_PUBLIC_CONVEX_URL</code> in the Vercel project environment.</p>
+        </section>
+      </main>
+    )
+  }
+
+  return <GamePage />
 }
