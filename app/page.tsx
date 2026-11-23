@@ -22,6 +22,7 @@ function GamePage() {
   const startGame = useMutation(api.rooms.startGame)
   const leaveRoom = useMutation(api.rooms.leaveRoom)
   const room = useQuery(api.rooms.getRoom, roomCode && playerId ? { code: roomCode, playerId } : 'skip')
+  const isActiveGame = screen === 'room' && room?.status === 'playing'
   const me = room?.players.find((player) => player.id === playerId)
   const everyoneReady = !!room?.players.length && room.players.every((player) => player.ready)
 
@@ -101,12 +102,19 @@ function GamePage() {
 
   return (
     <main className="game-shell">
-      <header className="topbar">
+      <header className={`topbar ${isActiveGame ? 'topbar-game' : ''}`}>
         <a className="brand" href="#home" onClick={(event) => { event.preventDefault(); setScreen('home') }} aria-label="The Gang home">
           <span className="brand-mark"><Spade size={19} fill="currentColor" /></span>
           <span>the gang<span className="brand-period">.</span></span>
         </a>
-        <div className="top-right"><span className="online-dot" /> <span>the table is open</span><span className="top-divider"/><button className="rules-link" onClick={() => document.getElementById('how-to-play')?.scrollIntoView({ behavior: 'smooth' })}>How to play <ChevronDown size={14}/></button></div>
+        {isActiveGame && room ? <div className="top-right game-top-right">
+          <span className="game-round-indicator">Round {room.round} <span>·</span> {room.phase === 'reveal' ? 'Showdown' : room.phase === 'challenge' ? 'Security check' : room.phase === 'result' ? 'Heist result' : 'Token ranking'}</span>
+          <span className="top-divider"/>
+          <span className="game-room-code"><small>ROOM</small><strong>{room.code}</strong></span>
+          <button className="game-invite-button" onClick={copyInvite} aria-label={copied ? 'Invite link copied' : 'Copy invite link'}>{copied ? <Check size={14}/> : <Copy size={14}/>} {copied ? 'Copied' : 'Invite'}</button>
+          <span className="top-divider"/>
+          <button className="game-leave-button" onClick={exitRoom} aria-label="Leave table"><ArrowLeft size={15}/> Leave table</button>
+        </div> : <div className="top-right"><span className="online-dot" /> <span>the table is open</span><span className="top-divider"/><button className="rules-link" onClick={() => document.getElementById('how-to-play')?.scrollIntoView({ behavior: 'smooth' })}>How to play <ChevronDown size={14}/></button></div>}
       </header>
 
       {screen === 'home' ? <section className="landing">
@@ -131,16 +139,16 @@ function GamePage() {
         </div>
         <div id="how-to-play" className="how-section"><div className="how-intro"><span className="section-kicker">THE SHORT VERSION</span><h2>Easy to learn.<br/><em>Hard to read.</em></h2></div><div className="how-steps"><article><span className="step-num">01</span><h3>Gather your gang</h3><p>Make a room, share the code, and wait for your people to pull up a chair.</p></article><article><span className="step-num">02</span><h3>Read the room</h3><p>Everyone gets a hand. Figure out where your cards belong without giving it away.</p></article><article><span className="step-num">03</span><h3>Trust your gut</h3><p>Put your cards in order together. The table wins — or loses — as one.</p></article></div></div>
         <footer className="footer"><span>Made for game night, wherever you are.</span><span>♥ &nbsp;PLAY NICE, PLAY TOGETHER</span></footer>
-      </section> : <section className="room-page">
-        <button className="back-button" onClick={exitRoom}><ArrowLeft size={15}/> Leave table</button>
+      </section> : <section className={`room-page ${isActiveGame ? 'room-page-active-game' : ''}`}>
+        {!isActiveGame && <button className="back-button" onClick={exitRoom}><ArrowLeft size={15}/> Leave table</button>}
         {!room ? <div className="loading-room"><LoaderCircle className="spin" size={22}/> Pulling up a chair…</div> : <>
-          <div className="room-heading"><div><div className="eyebrow room-eyebrow"><span className="eyebrow-line"/> {room.status === 'lobby' ? 'THE LOBBY' : room.phase === 'challenge' ? 'SECURITY CHECK' : room.phase === 'reveal' ? 'THE SHOWDOWN' : room.phase === 'result' ? 'HEIST RESULT' : 'ROUND ' + room.round} <span className="eyebrow-line"/></div><h1>{room.status === 'lobby' ? <>The table is <em>yours.</em></> : room.phase === 'reveal' ? <>Trust the <em>order.</em></> : room.phase === 'result' ? <>One team. One <em>outcome.</em></> : <>Eyes on your <em>hand.</em></>}</h1><p>{room.status === 'lobby' ? 'Get your crew in. The game starts when everyone is ready.' : room.phase === 'reveal' ? 'Hands turn over from the lowest token to the highest.' : room.phase === 'result' ? 'The table has made its move. See what comes next.' : 'Your cards are yours alone. Find your place in the team.'}</p></div><div className="room-code-card"><span>ROOM CODE</span><strong>{room.code}</strong><button onClick={copyInvite} aria-label="Copy invite link">{copied ? <Check size={15}/> : <Copy size={15}/>} {copied ? 'Copied' : 'Copy invite'}</button></div></div>
+          {!isActiveGame && <div className="room-heading"><div><div className="eyebrow room-eyebrow"><span className="eyebrow-line"/> {room.status === 'lobby' ? 'THE LOBBY' : room.phase === 'challenge' ? 'SECURITY CHECK' : room.phase === 'reveal' ? 'THE SHOWDOWN' : room.phase === 'result' ? 'HEIST RESULT' : 'ROUND ' + room.round} <span className="eyebrow-line"/></div><h1>{room.status === 'lobby' ? <>The table is <em>yours.</em></> : room.phase === 'reveal' ? <>Trust the <em>order.</em></> : room.phase === 'result' ? <>One team. One <em>outcome.</em></> : <>Eyes on your <em>hand.</em></>}</h1><p>{room.status === 'lobby' ? 'Get your crew in. The game starts when everyone is ready.' : room.phase === 'reveal' ? 'Hands turn over from the lowest token to the highest.' : room.phase === 'result' ? 'The table has made its move. See what comes next.' : 'Your cards are yours alone. Find your place in the team.'}</p></div><div className="room-code-card"><span>ROOM CODE</span><strong>{room.code}</strong><button onClick={copyInvite} aria-label="Copy invite link">{copied ? <Check size={15}/> : <Copy size={15}/>} {copied ? 'Copied' : 'Copy invite'}</button></div></div>}
           <div className={`room-main ${room.status === 'playing' ? 'game-active' : ''}`}>
             {room.status !== 'playing' && <section className="players-panel"><div className="panel-title"><span><Users size={16}/> The crew</span><span className="player-count">{room.players.length} / 6</span></div><div className="players-list">{room.players.map((player, index) => <div className="player-row" key={player.id}><span className={`player-avatar avatar-${['sage','clay','blue','gold','plum','slate'][index % 6]}`}>{player.name.charAt(0).toUpperCase()}</span><span className="player-name">{player.name}{player.id === playerId && <small>YOU</small>}</span>{player.id === room.hostId && <span className="host-tag"><Crown size={12}/> HOST</span>}<span className={`ready-state ${room.status !== 'lobby' || player.ready ? 'is-ready' : ''}`}>{room.status === 'lobby' ? player.ready ? <><Check size={13}/> Ready</> : 'Getting settled' : player.tokenPicks?.some((pick) => pick.round === room.round) ? <><Check size={13}/> Ranked</> : 'Choosing token'}</span></div>)}</div><div className="room-share"><Link2 size={15}/><span>Send the room code to your friends so they can join.</span></div>{error && <p className="error-message" role="alert">{error}</p>}
               {room.status === 'lobby' && <div className="lobby-actions">{room.hostId === playerId ? <button className="button button-primary full-button" disabled={busy || !everyoneReady || room.players.length < 2} onClick={() => void act(() => startGame({ code: room.code, playerId }))}><Spade size={16}/> {room.players.length < 2 ? 'Waiting for your crew' : !everyoneReady ? 'Waiting for everyone' : 'Deal the cards'} <ArrowRight size={16}/></button> : <button className={`button ${me?.ready ? 'button-ready' : 'button-primary'} full-button`} disabled={busy} onClick={() => void act(() => setReady({ code: room.code, playerId, ready: !me?.ready }))}>{me?.ready ? <><Check size={16}/> You’re ready</> : <>I’m in <ArrowRight size={16}/></>}</button>}<span className="host-hint">{room.hostId === playerId ? 'You can start when everyone has checked in.' : 'Your host will deal when the gang is ready.'}</span></div>}
             </section>}
             <GameFlow room={room} playerId={playerId} />
-          </div><div className="room-footer"><span><span className="online-dot"/> {room.status === 'lobby' ? 'Room is live' : 'Game in progress'}</span><span>THE GANG <span className="brand-period">.</span> &nbsp;PLAY NICE, PLAY TOGETHER</span></div>
+          </div>{!isActiveGame && <div className="room-footer"><span><span className="online-dot"/> {room.status === 'lobby' ? 'Room is live' : 'Game in progress'}</span><span>THE GANG <span className="brand-period">.</span> &nbsp;PLAY NICE, PLAY TOGETHER</span></div>}
         </>}
       </section>}
     </main>
