@@ -157,7 +157,17 @@ function GamePage() {
 }
 
 export default function Page() {
-  if (!process.env.NEXT_PUBLIC_CONVEX_URL) {
+  const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL
+  let hasValidConvexUrl = false
+  if (convexUrl) {
+    try {
+      hasValidConvexUrl = new URL(convexUrl).protocol === 'https:'
+    } catch {
+      hasValidConvexUrl = false
+    }
+  }
+
+  if (!hasValidConvexUrl) {
     return (
       <main className="game-shell">
         <header className="topbar">
@@ -169,7 +179,7 @@ export default function Page() {
         <section className="service-message" role="status">
           <span className="section-kicker">ONE QUICK SETUP</span>
           <h1>The table is almost <em>ready.</em></h1>
-          <p>Connect this deployment to its Convex database by setting <code>NEXT_PUBLIC_CONVEX_URL</code> in the Vercel project environment.</p>
+          <p>Set <code>NEXT_PUBLIC_CONVEX_URL</code> to <code>https://clever-ram-410.convex.cloud</code> in the Vercel project environment, then redeploy.</p>
         </section>
       </main>
     )
