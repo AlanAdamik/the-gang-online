@@ -144,7 +144,9 @@ h1 em, h2 em { font-weight: 400; color: #9a7543; }
 .mini-hand-card .card-suit { font-size: 22px; }
 .mini-hand-card .card-corner-bottom { top: auto; left: auto; right: 5px; bottom: 5px; }
 .round-guidance { margin: -6px 0 0; color: #737a71; font: 12px/1.5 Georgia,serif; }
-.private-hand { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 12px; border-radius: 5px; background: #f3eee3; }
+.game-table-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; gap: 12px; }
+.private-hand { min-height: 112px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 12px; padding: 12px; border-radius: 5px; background: #f3eee3; }
+.private-hand-empty > span:last-child { color: #898a81; font: 11px/1.5 Georgia,serif; }
 .private-hand > span { color: #887859; font-size: 8px; font-weight: 700; letter-spacing: .1em; }
 .private-hand small { display: block; margin-top: 4px; color: #9b978b; font-size: 8px; font-weight: 400; letter-spacing: 0; }
 .private-hand > div { display: flex; gap: 5px; }
@@ -227,4 +229,5 @@ h1 em, h2 em { font-weight: 400; color: #9a7543; }
 .guess-picker { width: min(100%, 260px); display: flex; flex-direction: column; gap: 6px; margin: 3px 0; color: #8c7758; text-align: left; font-size: 9px; font-weight: 700; letter-spacing: .07em; }
 .guess-picker select { height: 39px; padding: 0 10px; color: var(--ink); border: 1px solid #e3ded3; border-radius: 4px; background: #fffdf8; font-size: 12px; letter-spacing: 0; }
 .scanner-check .guess-hint { color: #99958a; font-size: 9px; }
-@media (max-width: 460px) { .game-flow-panel { gap: 13px; }.token-options { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }.rank-token { min-height: 48px; font-size: 15px; }.token-picker-heading { align-items: flex-start; flex-direction: column; gap: 4px; }.reveal-next-card h2, .heist-result h2 { font-size: 21px; }.revealed-hand { gap: 7px; padding: 7px; }.mini-hand-card { width: 39px; height: 58px; flex-basis: 39px; }.reveal-row { gap: 6px; }}
+@media (max-width: 760px) { .game-table-row { grid-template-columns: .7fr 1.3fr; gap: 8px; } }
+@media (max-width: 460px) { .game-table-row { grid-template-columns: .7fr 1.3fr; gap: 6px; }.public-board { padding: 8px; }.community-row { gap: 2px; }.mini-hand-card { width: 25px; height: 38px; flex-basis: 25px; }.game-flow-panel { gap: 13px; }.token-options { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }.rank-token { min-height: 48px; font-size: 15px; }.token-picker-heading { align-items: flex-start; flex-direction: column; gap: 4px; }.reveal-next-card h2, .heist-result h2 { font-size: 21px; }.revealed-hand { gap: 7px; padding: 7px; }.mini-hand-card { width: 39px; height: 58px; flex-basis: 39px; }.reveal-row { gap: 6px; }}

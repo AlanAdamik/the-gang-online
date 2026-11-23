@@ -247,17 +247,18 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
   return <section className="hand-panel game-flow-panel">
     <div className="hand-topline"><span><Sparkles size={15}/> Round {room.round} · {roundNames[room.round - 1] ?? 'Red'} tokens</span><span>{room.players.filter((player) => player.tokenPicks?.some((pick) => pick.round === room.round)).length} / {room.players.length} ranked</span></div>
     {(activeChallenges.length > 0 || room.activeSpecialistCard) && <div className="active-modifier-strip">{activeChallenges.length > 0 && <><Flame size={14}/><span>Active challenge{activeChallenges.length > 1 ? 's' : ''}:</span>{activeChallenges.map((id) => <span className="active-card-rule" key={id}><strong>{challengeNames[id - 1]}</strong><small>{challengeRules[id - 1]}</small></span>)}</>}{room.activeSpecialistCard && <><Shield size={14}/><span>Active Specialist:</span><span className="active-card-rule"><strong className="active-specialist-name">{specialistNames[room.activeSpecialistCard - 1]}</strong><small>{specialistRules[room.activeSpecialistCard - 1]}</small></span></>}</div>}
-    <div className="public-board">
-      <div className="board-caption"><span>SHARED BOARD</span><span>{board.length ? `${board.length} of 5 cards` : 'The flop is coming after this round'}</span></div>
-      <div className="community-row">{board.length ? board.map((card) => <Card value={card} small key={card}/>) : <span className="board-placeholder">Community cards appear here for everyone.</span>}</div>
-    </div>
-    <TokenHistory room={room}/>
     {stealNotice && dismissedStealNoticeAt !== stealNotice.createdAt && <div className="token-stolen-toast" role="alert" aria-live="assertive">
       <span><strong>Your token was stolen</strong>Token {stealNotice.value} was taken by {stealNotice.thiefName}. Choose another to stay in the round.</span>
       <button type="button" aria-label="Dismiss token stolen notification" onClick={() => setDismissedStealNoticeAt(stealNotice.createdAt)}>×</button>
     </div>}
     <p className="round-guidance">{stageMessage}</p>
-    {me?.cards.length ? <div className="private-hand"><span>YOUR PRIVATE CARDS <small>keep these to yourself</small></span><div>{me.cards.map((card) => <Card value={card} key={card}/>)}</div></div> : null}
+    <div className="game-table-row">
+      {me?.cards.length ? <div className="private-hand"><span>YOUR PRIVATE CARDS <small>keep these to yourself</small></span><div>{me.cards.map((card) => <Card value={card} key={card}/>)}</div></div> : <div className="private-hand private-hand-empty"><span>YOUR PRIVATE CARDS</span><span>Cards are dealt at the start of the heist.</span></div>}
+      <div className="public-board">
+        <div className="board-caption"><span>SHARED BOARD</span><span>{board.length ? `${board.length} of 5 cards` : 'The flop is coming after this round'}</span></div>
+        <div className="community-row">{board.length ? board.map((card) => <Card value={card} small key={card}/>) : <span className="board-placeholder">Community cards appear here for everyone.</span>}</div>
+      </div>
+    </div>
     <div className={`token-picker token-picker-${colorName}`}>
       <div className="token-picker-heading"><strong>Where do you rank?</strong><span>1 is lowest · {room.players.length} is highest</span></div>
       <div className="token-options">{availableTokens.map((value) => {
@@ -270,6 +271,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
       })}</div>
       <p className="token-note">{currentPick ? `You chose token ${currentPick.value}. You can change it until everyone has ranked.` : 'Choose a token. You can take one from another player, who will need to choose again.'}</p>
     </div>
+    <TokenHistory room={room}/>
     {error && <p className="error-message" role="alert">{error}</p>}
     <div className="mode-footnote">{modeCopy(room.mode)}</div>
   </section>
