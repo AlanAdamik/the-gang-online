@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMutation } from 'convex/react'
 import { api } from '../convex/_generated/api'
+import { Card } from './playing-card'
+import { RealCasinoTable } from './real-casino-table'
 import { Check, Eye, Flame, LoaderCircle, Shield, Sparkles } from 'lucide-react'
 
 type GameFlowProps = {
@@ -61,21 +63,6 @@ const specialistRules = [
 const roundColors = ['white', 'yellow', 'orange', 'red']
 const roundNames = ['White', 'Yellow', 'Orange', 'Red']
 const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
-const suits = ['♠', '♥', '♣', '♦']
-
-function getCardFace(value: number) {
-  const normalized = (value - 1) % 52
-  return { rank: ranks[normalized % 13], suit: suits[Math.floor(normalized / 13)], red: normalized >= 13 && normalized < 26 || normalized >= 39 }
-}
-
-function Card({ value, small = false }: { value: number; small?: boolean }) {
-  const face = getCardFace(value)
-  return <div className={`hand-card ${small ? 'mini-hand-card' : ''} ${face.red ? 'red-card' : ''}`} aria-label={`${face.rank} of ${face.suit}`}>
-    <span className="card-corner">{face.rank}<small>{face.suit}</small></span>
-    <span className="card-suit">{face.suit}</span>
-    <span className="card-corner card-corner-bottom">{face.rank}<small>{face.suit}</small></span>
-  </div>
-}
 
 function modeCopy(mode: GameFlowProps['room']['mode']) {
   if (mode === 'professional') return 'One permanent Challenge stays active. Successful heists add a temporary Challenge; a failed heist earns a Specialist.'
@@ -106,6 +93,9 @@ function TokenHistory({ room }: { room: GameFlowProps['room'] }) {
 
 export function GameFlow({ room, playerId }: GameFlowProps) {
   const [busy, setBusy] = useState(false)
+  const [displayMode, setDisplayMode] = useState<'text' | 'real'>('real')
+  const [burningCard, setBurningCard] = useState(false)
+  const previousBoardLength = useRef(room.communityCards?.length ?? 0)
   const [error, setError] = useState('')
   const [guess, setGuess] = useState('')
   const [dismissedStealNoticeAt, setDismissedStealNoticeAt] = useState<number | null>(null)
@@ -126,6 +116,22 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
   const nextPlayer = room.players.find((player) => player.id === revealOrder[reveals.length])
   const board = room.communityCards ?? []
   const activeChallenges = room.activeChallengeCards ?? []
+
+  useEffect(() => {
+    const cardsWereDealt = board.length > previousBoardLength.current
+    previousBoardLength.current = board.length
+    if (!cardsWereDealt) return
+    setBurningCard(true)
+    const timeout = window.setTimeout(() => setBurningCard(false), 650)
+    return () => window.clearTimeout(timeout)
+  }, [board.length])
+
+  const viewModeToggle = <div className="game-view-toggle" role="group" aria-label="Choose game display mode">
+    <span>TABLE VIEW</span>
+    <button type="button" aria-pressed={displayMode === 'text'} onClick={() => setDisplayMode('text')}>Text</button>
+    <button type="button" aria-pressed={displayMode === 'real'} onClick={() => setDisplayMode('real')}>Real table</button>
+  </div>
+  const realTable = displayMode === 'real' ? <RealCasinoTable players={room.players} board={board} playerId={playerId} round={room.round} phase={room.phase} reveals={reveals} burningCard={burningCard}/> : null
   const completedChecks = room.completedChallengeChecks ?? []
   const currentChallengeCheck = (room.challengeChecks ?? []).find((id) => !completedChecks.includes(id))
 
@@ -165,7 +171,9 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
 
   if (room.phase === 'result') {
     const failed = room.outcome === 'failed'
-    return <section className="hand-panel game-flow-panel">
+    return <section className={`hand-panel game-flow-panel ${displayMode === 'real' ? 'real-mode' : 'text-mode'}`}>
+      {viewModeToggle}
+      {realTable}
       <div className={`heist-result ${failed ? 'result-failed' : 'result-success'}`}>
         <span className="section-kicker">HEIST {failed ? 'FAILED' : 'CLEARED'}</span>
         <h2>{failed ? <>The alarm is <em>ringing.</em></> : <>Vault <em>opened.</em></>}</h2>
@@ -199,7 +207,9 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
     const highestPlayer = room.players.find((player) => player.tokenPicks?.some((pick) => pick.round === 4 && pick.value === room.players.length))
     const isRankCheck = currentChallengeCheck === 4
     const categories = ['High card', 'One pair', 'Two pair', 'Three of a kind', 'Straight', 'Flush', 'Full house', 'Four of a kind', 'Straight flush']
-    return <section className="hand-panel game-flow-panel">
+    return <section className={`hand-panel game-flow-panel ${displayMode === 'real' ? 'real-mode' : 'text-mode'}`}>
+      {viewModeToggle}
+      {realTable}
       <div className="hand-topline"><span><Eye size={15}/> Security check</span><span>{completedChecks.length + 1} / {(room.challengeChecks ?? []).length}</span></div>
       <div className="scanner-check">
         <span className="section-kicker">{challengeNames[(currentChallengeCheck ?? 4) - 1]}</span>
@@ -223,7 +233,9 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
   }
 
   if (room.phase === 'reveal') {
-    return <section className="hand-panel game-flow-panel">
+    return <section className={`hand-panel game-flow-panel ${displayMode === 'real' ? 'real-mode' : 'text-mode'}`}>
+      {viewModeToggle}
+      {realTable}
       <div className="hand-topline"><span><Eye size={15}/> The showdown</span><span>Lowest token first</span></div>
       <div className="community-row" aria-label="Community cards">{board.map((card) => <Card value={card} small key={card}/>)}</div>
       <div className="reveal-next-card">
@@ -245,7 +257,9 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
   }
 
   const colorName = roundColors[room.round - 1] ?? 'red'
-  return <section className="hand-panel game-flow-panel">
+  return <section className={`hand-panel game-flow-panel ${displayMode === 'real' ? 'real-mode' : 'text-mode'}`}>
+    {viewModeToggle}
+    {realTable}
     <div className="hand-topline"><span><Sparkles size={15}/> Round {room.round} · {roundNames[room.round - 1] ?? 'Red'} tokens</span><span>{room.players.filter((player) => player.tokenPicks?.some((pick) => pick.round === room.round)).length} / {room.players.length} ranked</span></div>
     {(activeChallenges.length > 0 || room.activeSpecialistCard) && <div className="active-modifier-strip">{activeChallenges.length > 0 && <><Flame size={14}/><span>Active challenge{activeChallenges.length > 1 ? 's' : ''}:</span>{activeChallenges.map((id) => <span className="active-card-rule" key={id}><strong>{challengeNames[id - 1]}</strong><small>{challengeRules[id - 1]}</small></span>)}</>}{room.activeSpecialistCard && <><Shield size={14}/><span>Active Specialist:</span><span className="active-card-rule"><strong className="active-specialist-name">{specialistNames[room.activeSpecialistCard - 1]}</strong><small>{specialistRules[room.activeSpecialistCard - 1]}</small></span></>}</div>}
     {stealNotice && dismissedStealNoticeAt !== stealNotice.createdAt && <div className="token-stolen-toast" role="alert" aria-live="assertive">
