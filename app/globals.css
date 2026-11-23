@@ -212,10 +212,10 @@ h1 em, h2 em { font-weight: 400; color: #9a7543; }
 .reveal-next-card { display: flex; flex-direction: column; align-items: center; gap: 11px; padding: 15px 4px 8px; text-align: center; }
 .reveal-next-card h2, .heist-result h2 { margin: 0; font: 400 24px/1.15 Georgia,serif; letter-spacing: -.5px; }
 .reveal-next-card > p, .heist-result > p { max-width: 310px; margin: 0; color: #83847a; font: 11px/1.5 Georgia,serif; }
-.revealed-hand { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px; border: 1px solid #e8e3d9; border-radius: 4px; background: #f9f7f1; text-align: left; }
-.revealed-player { display: flex; flex-direction: column; gap: 3px; color: #555d51; font-size: 10px; }
+.revealed-hand { width: 100%; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 10px; padding: 8px 10px; border: 1px solid #e8e3d9; border-radius: 4px; background: #f9f7f1; text-align: left; }
+.revealed-player { display: flex; align-items: baseline; gap: 8px; color: #555d51; font-size: 10px; }
 .revealed-player strong { color: #98784e; font-size: 9px; }
-.reveal-cards { display: flex; gap: 4px; }
+.reveal-cards { display: flex; flex: 0 0 auto; gap: 4px; }
 .showdown-board { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 5px; padding-top: 10px; border-top: 1px solid #ece8df; }
 .showdown-board > span { margin-right: 4px; color: #948c7e; font-size: 8px; font-weight: 700; letter-spacing: .1em; }
 .heist-result { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 7px 0 12px; text-align: center; }
@@ -234,9 +234,6 @@ h1 em, h2 em { font-weight: 400; color: #9a7543; }
 .next-heist-button { margin-top: 2px; }
 .reveal-history { padding-top: 12px; border-top: 1px solid #eae6dc; }
 .reveal-history > .hand-topline { margin-bottom: 8px; }
-.reveal-row { display: flex; align-items: center; gap: 9px; padding: 7px 0; border-bottom: 1px solid #efebe4; }
-.reveal-row > strong { flex: 1; color: #535c51; font-size: 9px; text-align: left; }
-.reveal-row > span { color: #98784e; font-size: 9px; }
 .mode-footnote { color: #929186; font: 9px/1.45 Georgia,serif; }
 .scanner-check { display: flex; flex-direction: column; align-items: center; gap: 11px; padding: 18px 5px; text-align: center; }
 .scanner-check h2 { margin: 0; font: 400 24px/1.15 Georgia,serif; letter-spacing: -.4px; }

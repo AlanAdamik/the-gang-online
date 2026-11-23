@@ -183,8 +183,8 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
         {reveals.map((reveal, index) => {
           const player = room.players.find((candidate) => candidate.id === reveal.playerId)
           const privateCards = player?.cards ?? reveal.cards.slice(0, reveal.cards.length - board.length)
-          return <div className="reveal-row" key={`${reveal.playerId}-${index}`}>
-            <strong>{index + 1}. {player?.name ?? 'Player'}</strong><span>{reveal.category}</span>
+          return <div className="revealed-hand" key={`${reveal.playerId}-${index}`}>
+            <span className="revealed-player">{index + 1}. {player?.name ?? 'Player'} <strong>{reveal.category}</strong></span>
             <div className="reveal-cards">{privateCards.map((card) => <Card value={card} small key={card}/>)}</div>
           </div>
         })}
