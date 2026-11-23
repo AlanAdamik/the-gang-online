@@ -189,6 +189,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
           </div>
         })}
       </div>
+      <div className="showdown-board"><span>SHARED BOARD</span>{board.map((card) => <Card value={card} small key={`board-${card}`}/>)}</div>
       <TokenHistory room={room}/>
       {error && <p className="error-message" role="alert">{error}</p>}
     </section>
