@@ -128,3 +128,85 @@ h1 em, h2 em { font-weight: 400; color: #9a7543; }
 .spin { animation: spin 1s linear infinite; }@keyframes spin { to { transform: rotate(360deg); } }
 @media (max-width: 760px) { .topbar { height: 62px; padding: 0 20px; }.top-right > span:not(.online-dot):not(.top-divider) { display: none; }.landing { padding: 47px 22px 0; grid-template-columns: 1fr; }.hero-copy { max-width: 540px; margin: 0 auto; }.hero-copy h1 { font-size: 58px; }.table-art { min-height: 350px; margin-top: 26px; }.felt-oval { width: min(100%, 420px); }.how-section { margin-top: 30px; grid-template-columns: 1fr; gap: 23px; padding-top: 34px; }.how-steps { gap: 17px; }.how-steps p { font-size: 11px; }.footer { gap: 12px; font-size: 8px; }.room-page { padding: 27px 20px 0; }.room-heading { align-items: start; padding-top: 28px; }.room-heading h1 { font-size: 37px; }.room-code-card { min-width: 123px; padding: 10px; }.room-main { grid-template-columns: 1fr; }.players-panel { min-height: 0; }.hand-panel { min-height: 290px; }.table-waiting { min-height: 250px; } }
 @media (max-width: 460px) { .topbar { padding: 0 16px; }.brand { font-size: 20px; }.top-right { gap: 6px; }.top-divider { margin: 0 3px; }.landing { padding-right: 18px; padding-left: 18px; }.hero-copy h1 { font-size: 52px; }.hero-subtitle { font-size: 15px; }.hero-actions { gap: 11px; }.hero-actions .button-primary { min-width: 165px; padding: 0 12px; }.free-note { font-size: 9px; }.join-card { padding: 15px 13px; }.join-fields { flex-direction: column; }.code-input { flex: auto; }.table-art { min-height: 300px; }.felt-oval { width: 100%; padding: 12px; }.playing-card { width: 62px; height: 90px; }.table-cards { top: 57%; }.how-steps { grid-template-columns: 1fr; gap: 19px; }.how-steps article { display: grid; grid-template-columns: 26px 1fr; column-gap: 7px; }.how-steps h3 { margin: 0 0 4px; }.how-steps p { grid-column: 2; }.step-num { grid-row: span 2; }.footer { align-items: start; flex-direction: column; }.room-page { padding: 23px 15px 0; }.room-heading { gap: 12px; }.room-heading h1 { font-size: 31px; letter-spacing: -1.3px; }.room-heading p { max-width: 220px; font-size: 12px; line-height: 1.4; }.room-code-card { min-width: 105px; }.room-code-card strong { font-size: 20px; }.room-code-card button { font-size: 8px; }.players-panel { padding: 16px 14px; }.player-row { gap: 7px; }.ready-state { font-size: 8px; }.host-tag { font-size: 7px; }.room-footer { gap: 10px; }.hand-card { width: 57px; height: 88px; }.hand-cards { gap: 5px; } }
+.game-flow-panel { gap: 17px; min-height: 430px; }
+.mode-picker { width: min(100%, 260px); display: flex; flex-direction: column; gap: 7px; margin: 16px 0 7px; color: #8c7758; text-align: left; font-size: 10px; font-weight: 700; letter-spacing: .07em; }
+.mode-picker select { height: 39px; padding: 0 10px; color: var(--ink); border: 1px solid #e3ded3; border-radius: 4px; background: #fffdf8; font-size: 12px; letter-spacing: 0; }
+.mode-name { margin: 14px 0 6px; color: var(--felt); font: 600 13px Georgia,serif; }
+.mode-warning { display: flex; align-items: center; gap: 6px; margin-top: 13px; color: #a34d40; font-size: 10px; }
+.public-board { padding: 12px; border: 1px solid #e5e0d5; border-radius: 5px; background: #f6f3ec; }
+.board-caption { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 10px; color: #8c806c; font-size: 8px; font-weight: 700; letter-spacing: .12em; }
+.board-caption span:last-child { font-weight: 400; letter-spacing: 0; }
+.community-row { min-height: 82px; display: flex; align-items: center; justify-content: center; gap: 7px; }
+.board-placeholder { color: #9b9a90; font: italic 11px Georgia,serif; }
+.mini-hand-card { width: 45px; height: 67px; flex: 0 0 45px; }
+.mini-hand-card .card-corner { top: 5px; left: 5px; font-size: 10px; }
+.mini-hand-card .card-corner small { font-size: 9px; }
+.mini-hand-card .card-suit { font-size: 22px; }
+.mini-hand-card .card-corner-bottom { top: auto; left: auto; right: 5px; bottom: 5px; }
+.round-guidance { margin: -6px 0 0; color: #737a71; font: 12px/1.5 Georgia,serif; }
+.private-hand { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 12px; border-radius: 5px; background: #f3eee3; }
+.private-hand > span { color: #887859; font-size: 8px; font-weight: 700; letter-spacing: .1em; }
+.private-hand small { display: block; margin-top: 4px; color: #9b978b; font-size: 8px; font-weight: 400; letter-spacing: 0; }
+.private-hand > div { display: flex; gap: 5px; }
+.private-hand .hand-card { width: 42px; height: 62px; }
+.private-hand .card-corner { top: 4px; left: 4px; font-size: 10px; }
+.private-hand .card-corner small { font-size: 9px; }
+.private-hand .card-suit { font-size: 21px; }
+.private-hand .card-corner-bottom { left: auto; right: 4px; top: auto; bottom: 4px; }
+.token-picker { padding: 13px; border: 1px solid #e5e0d5; border-radius: 5px; background: #fffdf8; }
+.token-picker-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+.token-picker-heading strong { font: 600 13px Georgia,serif; }
+.token-picker-heading span { color: #929186; font-size: 9px; }
+.token-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+.rank-token { min-height: 54px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 1px solid #ded8ca; border-radius: 4px; color: var(--ink); background: #f8f6ef; font: 700 17px Georgia,serif; }
+.rank-token span { color: #8e8c80; font: 8px Arial,Helvetica,sans-serif; }
+.rank-token:hover:not(:disabled) { border-color: #b79a6d; transform: translateY(-1px); }
+.rank-token.is-selected { border-color: #1d493c; color: #fffdf7; background: #1d493c; }
+.rank-token.is-selected span { color: #e6eee3; }
+.rank-token.is-taken, .rank-token:disabled { cursor: not-allowed; opacity: .42; }
+.token-picker-yellow .rank-token.is-selected { border-color: #aa884e; color: #332b1e; background: #e7d39a; }
+.token-picker-orange .rank-token.is-selected { border-color: #aa6640; color: #fffaf1; background: #bd754c; }
+.token-picker-red .rank-token.is-selected { border-color: #91483f; color: #fffaf1; background: #a85447; }
+.token-note { margin: 9px 0 0; color: #89887e; font-size: 9px; line-height: 1.45; }
+.active-modifier-strip { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; padding: 8px 10px; border-radius: 4px; color: #876f4b; background: #f3eee3; font-size: 9px; }
+.active-modifier-strip strong { color: #5d5748; font-size: 9px; }
+.active-modifier-strip > svg { color: #a55347; }
+.active-modifier-strip .active-specialist-name { color: #a34d40; }
+.active-card-rule { min-width: 0; display: flex; flex: 1 1 100%; flex-direction: column; gap: 2px; }
+.active-card-rule small { color: #818377; font-size: 8px; font-weight: 400; line-height: 1.35; letter-spacing: 0; }
+.reveal-next-card { display: flex; flex-direction: column; align-items: center; gap: 11px; padding: 15px 4px 8px; text-align: center; }
+.reveal-next-card h2, .heist-result h2 { margin: 0; font: 400 24px/1.15 Georgia,serif; letter-spacing: -.5px; }
+.reveal-next-card > p, .heist-result > p { max-width: 310px; margin: 0; color: #83847a; font: 11px/1.5 Georgia,serif; }
+.revealed-hand { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px; border: 1px solid #e8e3d9; border-radius: 4px; background: #f9f7f1; text-align: left; }
+.revealed-player { display: flex; flex-direction: column; gap: 3px; color: #555d51; font-size: 10px; }
+.revealed-player strong { color: #98784e; font-size: 9px; }
+.reveal-cards { display: flex; gap: 4px; }
+.showdown-board { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 5px; padding-top: 10px; border-top: 1px solid #ece8df; }
+.showdown-board > span { margin-right: 4px; color: #948c7e; font-size: 8px; font-weight: 700; letter-spacing: .1em; }
+.heist-result { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 7px 0 12px; text-align: center; }
+.heist-result.result-success .section-kicker { color: #4f7c5a; }
+.heist-result.result-failed .section-kicker { color: #a34d40; }
+.heist-result .game-over-note { color: #a34d40; font-weight: 700; }
+.modifier-draws { width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.modifier-card { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; padding: 11px; border: 1px solid #e2ddd2; border-radius: 5px; background: #fffdf8; text-align: left; }
+.modifier-card > span { display: flex; align-items: center; gap: 5px; color: #4f7c5a; font-size: 7px; font-weight: 700; letter-spacing: .1em; }
+.modifier-card strong { color: #313b31; font: 600 13px Georgia,serif; }
+.modifier-card p { margin: 0; color: #7d8279; font: 10px/1.4 Georgia,serif; }
+.specialist-card { border-color: #e5d1cc; background: #fdf8f6; }
+.specialist-card > span { color: #a34d40; }
+.challenge-card { border-color: #cfe0d2; background: #f6faf5; }
+.challenge-card > span { color: #4f7c5a; }
+.next-heist-button { margin-top: 2px; }
+.reveal-history { padding-top: 12px; border-top: 1px solid #eae6dc; }
+.reveal-history > .hand-topline { margin-bottom: 8px; }
+.reveal-row { display: flex; align-items: center; gap: 9px; padding: 7px 0; border-bottom: 1px solid #efebe4; }
+.reveal-row > strong { flex: 1; color: #535c51; font-size: 9px; text-align: left; }
+.reveal-row > span { color: #98784e; font-size: 9px; }
+.mode-footnote { color: #929186; font: 9px/1.45 Georgia,serif; }
+.scanner-check { display: flex; flex-direction: column; align-items: center; gap: 11px; padding: 18px 5px; text-align: center; }
+.scanner-check h2 { margin: 0; font: 400 24px/1.15 Georgia,serif; letter-spacing: -.4px; }
+.scanner-check > p { max-width: 300px; margin: 0; color: #83847a; font: 11px/1.5 Georgia,serif; }
+.guess-picker { width: min(100%, 260px); display: flex; flex-direction: column; gap: 6px; margin: 3px 0; color: #8c7758; text-align: left; font-size: 9px; font-weight: 700; letter-spacing: .07em; }
+.guess-picker select { height: 39px; padding: 0 10px; color: var(--ink); border: 1px solid #e3ded3; border-radius: 4px; background: #fffdf8; font-size: 12px; letter-spacing: 0; }
+.scanner-check .guess-hint { color: #99958a; font-size: 9px; }
+@media (max-width: 460px) { .game-flow-panel { gap: 13px; }.token-options { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }.rank-token { min-height: 48px; font-size: 15px; }.token-picker-heading { align-items: flex-start; flex-direction: column; gap: 4px; }.reveal-next-card h2, .heist-result h2 { font-size: 21px; }.revealed-hand { gap: 7px; padding: 7px; }.mini-hand-card { width: 39px; height: 58px; flex-basis: 39px; }.reveal-row { gap: 6px; }}

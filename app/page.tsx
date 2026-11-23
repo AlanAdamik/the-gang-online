@@ -1,19 +1,12 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from '../convex/_generated/api'
-import { ArrowLeft, ArrowRight, Check, ChevronDown, Copy, Crown, DoorOpen, Heart, Link2, LoaderCircle, Spade, Sparkles, Users } from 'lucide-react'
+import { GameFlow } from '../components/game-flow'
+import { ArrowLeft, ArrowRight, Check, ChevronDown, Copy, Crown, DoorOpen, Heart, Link2, LoaderCircle, Spade, Users } from 'lucide-react'
 
 type Screen = 'home' | 'room'
-const suits = ['♠', '♥', '♣', '♦']
-const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
-
-function displayCard(value: number) {
-  const normalized = (value - 1) % 52
-  return { rank: ranks[normalized % 13], suit: suits[Math.floor(normalized / 13)], red: normalized >= 13 && normalized < 26 || normalized >= 39 }
-}
-
 function GamePage() {
   const [screen, setScreen] = useState<Screen>('home')
   const [playerId, setPlayerId] = useState('')
@@ -49,8 +42,6 @@ function GamePage() {
       setScreen('home')
     }
   }, [room, roomCode])
-
-  const sortedCards = useMemo(() => [...(me?.cards ?? [])].sort((a, b) => a - b), [me?.cards])
 
   async function act(action: () => Promise<unknown>) {
     setError('')
@@ -143,12 +134,12 @@ function GamePage() {
       </section> : <section className="room-page">
         <button className="back-button" onClick={exitRoom}><ArrowLeft size={15}/> Leave table</button>
         {!room ? <div className="loading-room"><LoaderCircle className="spin" size={22}/> Pulling up a chair…</div> : <>
-          <div className="room-heading"><div><div className="eyebrow room-eyebrow"><span className="eyebrow-line"/> {room.status === 'lobby' ? 'THE LOBBY' : 'ROUND ' + room.round} <span className="eyebrow-line"/></div><h1>{room.status === 'lobby' ? <>The table is <em>yours.</em></> : <>Eyes on your <em>hand.</em></>}</h1><p>{room.status === 'lobby' ? 'Get your crew in. The game starts when everyone is ready.' : 'Your cards are yours alone. Find your place in the team.'}</p></div><div className="room-code-card"><span>ROOM CODE</span><strong>{room.code}</strong><button onClick={copyInvite} aria-label="Copy invite link">{copied ? <Check size={15}/> : <Copy size={15}/>} {copied ? 'Copied' : 'Copy invite'}</button></div></div>
+          <div className="room-heading"><div><div className="eyebrow room-eyebrow"><span className="eyebrow-line"/> {room.status === 'lobby' ? 'THE LOBBY' : room.phase === 'challenge' ? 'SECURITY CHECK' : room.phase === 'reveal' ? 'THE SHOWDOWN' : room.phase === 'result' ? 'HEIST RESULT' : 'ROUND ' + room.round} <span className="eyebrow-line"/></div><h1>{room.status === 'lobby' ? <>The table is <em>yours.</em></> : room.phase === 'reveal' ? <>Trust the <em>order.</em></> : room.phase === 'result' ? <>One team. One <em>outcome.</em></> : <>Eyes on your <em>hand.</em></>}</h1><p>{room.status === 'lobby' ? 'Get your crew in. The game starts when everyone is ready.' : room.phase === 'reveal' ? 'Hands turn over from the lowest token to the highest.' : room.phase === 'result' ? 'The table has made its move. See what comes next.' : 'Your cards are yours alone. Find your place in the team.'}</p></div><div className="room-code-card"><span>ROOM CODE</span><strong>{room.code}</strong><button onClick={copyInvite} aria-label="Copy invite link">{copied ? <Check size={15}/> : <Copy size={15}/>} {copied ? 'Copied' : 'Copy invite'}</button></div></div>
           <div className="room-main">
-            <section className="players-panel"><div className="panel-title"><span><Users size={16}/> The crew</span><span className="player-count">{room.players.length} / 6</span></div><div className="players-list">{room.players.map((player, index) => <div className="player-row" key={player.id}><span className={`player-avatar avatar-${['sage','clay','blue','gold','plum','slate'][index % 6]}`}>{player.name.charAt(0).toUpperCase()}</span><span className="player-name">{player.name}{player.id === playerId && <small>YOU</small>}</span>{player.id === room.hostId && <span className="host-tag"><Crown size={12}/> HOST</span>}<span className={`ready-state ${player.ready ? 'is-ready' : ''}`}>{player.ready ? <><Check size={13}/> Ready</> : 'Getting settled'}</span></div>)}</div><div className="room-share"><Link2 size={15}/><span>Send the room code to your friends so they can join.</span></div>{error && <p className="error-message" role="alert">{error}</p>}
+            <section className="players-panel"><div className="panel-title"><span><Users size={16}/> The crew</span><span className="player-count">{room.players.length} / 6</span></div><div className="players-list">{room.players.map((player, index) => <div className="player-row" key={player.id}><span className={`player-avatar avatar-${['sage','clay','blue','gold','plum','slate'][index % 6]}`}>{player.name.charAt(0).toUpperCase()}</span><span className="player-name">{player.name}{player.id === playerId && <small>YOU</small>}</span>{player.id === room.hostId && <span className="host-tag"><Crown size={12}/> HOST</span>}<span className={`ready-state ${room.status !== 'lobby' || player.ready ? 'is-ready' : ''}`}>{room.status === 'lobby' ? player.ready ? <><Check size={13}/> Ready</> : 'Getting settled' : player.tokenPicks?.some((pick) => pick.round === room.round) ? <><Check size={13}/> Ranked</> : 'Choosing token'}</span></div>)}</div><div className="room-share"><Link2 size={15}/><span>Send the room code to your friends so they can join.</span></div>{error && <p className="error-message" role="alert">{error}</p>}
               {room.status === 'lobby' && <div className="lobby-actions">{room.hostId === playerId ? <button className="button button-primary full-button" disabled={busy || !everyoneReady || room.players.length < 2} onClick={() => void act(() => startGame({ code: room.code, playerId }))}><Spade size={16}/> {room.players.length < 2 ? 'Waiting for your crew' : !everyoneReady ? 'Waiting for everyone' : 'Deal the cards'} <ArrowRight size={16}/></button> : <button className={`button ${me?.ready ? 'button-ready' : 'button-primary'} full-button`} disabled={busy} onClick={() => void act(() => setReady({ code: room.code, playerId, ready: !me?.ready }))}>{me?.ready ? <><Check size={16}/> You’re ready</> : <>I’m in <ArrowRight size={16}/></>}</button>}<span className="host-hint">{room.hostId === playerId ? 'You can start when everyone has checked in.' : 'Your host will deal when the gang is ready.'}</span></div>}
             </section>
-            <section className="hand-panel">{room.status === 'lobby' ? <div className="table-waiting"><div className="waiting-icon"><Spade size={26}/></div><span className="section-kicker">THE CARDS ARE WAITING</span><h2>Good things come<br/>to those who <em>deal.</em></h2><p>Once the whole crew is ready, your cards will be dealt right here.</p><div className="waiting-cards"><span className="waiting-card">♣</span><span className="waiting-card">♦</span><span className="waiting-card">♥</span></div></div> : <><div className="hand-topline"><span><Sparkles size={15}/> Your hand</span><span>Keep it to yourself</span></div><div className="hand-cards">{sortedCards.map((card, index) => { const face = displayCard(card); return <div className={`hand-card ${face.red ? 'red-card' : ''}`} key={`${card}-${index}`}><span className="card-corner">{face.rank}<small>{face.suit}</small></span><span className="card-suit">{face.suit}</span><span className="card-corner card-corner-bottom">{face.rank}<small>{face.suit}</small></span></div> })}</div><div className="hand-tip"><span>♥</span> Work together to order your cards from lowest to highest.</div></>}</section>
+            <GameFlow room={room} playerId={playerId} />
           </div><div className="room-footer"><span><span className="online-dot"/> {room.status === 'lobby' ? 'Room is live' : 'Game in progress'}</span><span>THE GANG <span className="brand-period">.</span> &nbsp;PLAY NICE, PLAY TOGETHER</span></div>
         </>}
       </section>}
