@@ -33,15 +33,16 @@ export function RealCasinoTable({ players, board, playerId, round, phase, reveal
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   useEffect(() => {
-    const syncFullscreen = () => setIsFullscreen(document.fullscreenElement === stageRef.current)
+    const syncFullscreen = () => setIsFullscreen(document.fullscreenElement === stageRef.current?.closest('.game-shell'))
     document.addEventListener('fullscreenchange', syncFullscreen)
     return () => document.removeEventListener('fullscreenchange', syncFullscreen)
   }, [])
 
   async function toggleFullscreen() {
-    if (!stageRef.current) return
-    if (document.fullscreenElement === stageRef.current) await document.exitFullscreen()
-    else await stageRef.current.requestFullscreen()
+    const gameShell = stageRef.current?.closest<HTMLElement>('.game-shell')
+    if (!gameShell) return
+    if (document.fullscreenElement === gameShell) await document.exitFullscreen()
+    else await gameShell.requestFullscreen()
   }
 
   return <section ref={stageRef} className="real-table-stage" aria-label="Live casino table">
@@ -57,22 +58,23 @@ export function RealCasinoTable({ players, board, playerId, round, phase, reveal
       const pick = player.tokenPicks?.find((entry) => entry.round === round)
       const hasRevealed = reveals.some((reveal) => reveal.playerId === player.id)
       const cardsAreVisible = player.id === playerId || phase === 'result' || phase === 'reveal' && hasRevealed
-      const tokenLeft = left + (50 - left) * 0.38
-      const tokenTop = top + (50 - top) * 0.38
+      const horizontal = Math.cos(angle)
+      const vertical = Math.sin(angle)
+      const tokenSide = Math.abs(horizontal) > Math.abs(vertical)
+        ? horizontal > 0 ? 'right' : 'left'
+        : vertical > 0 ? 'bottom' : 'top'
 
-      return <div key={player.id}>
-        <article className={`casino-seat ${player.id === playerId ? 'casino-seat-you' : ''}`} style={{ left: `${left}%`, top: `${top}%` }} aria-label={`${player.name}${player.id === playerId ? ', you' : ''}`}>
-          <div className="casino-seat-name">{player.name}{player.id === playerId && <span>YOU</span>}</div>
-          {!pick && <span className="casino-seat-waiting">{player.id === playerId ? 'Your seat' : 'Ready to rank'}</span>}
-          <div className={`casino-pocket-cards ${hasRevealed ? 'casino-pocket-cards-revealed' : ''}`} aria-label={cardsAreVisible ? `${player.name}'s cards` : `${player.name}'s face-down cards`}>
-            {(cardsAreVisible ? player.cards : [0, 1]).map((value, cardIndex) => {
-              if (!cardsAreVisible) return <CardBack key={`${player.id}-back-${cardIndex}`}/>
-              return <Card key={`${player.id}-card-${cardIndex}-${value}`} value={value} small/>
-            })}
-          </div>
-        </article>
-        {pick && <div className={`casino-chip casino-table-token chip-${color}`} style={{ left: `${tokenLeft}%`, top: `${tokenTop}%` }} key={`${player.id}-${round}-${pick.value}`} aria-label={`${player.name}'s token ${pick.value}`}><span>{pick.value}</span></div>}
-      </div>
+      return <article key={player.id} className={`casino-seat ${player.id === playerId ? 'casino-seat-you' : ''}`} style={{ left: `${left}%`, top: `${top}%` }} aria-label={`${player.name}${player.id === playerId ? ', you' : ''}`}>
+        <div className="casino-seat-name">{player.name}{player.id === playerId && <span>YOU</span>}</div>
+        {!pick && <span className="casino-seat-waiting">{player.id === playerId ? 'Your seat' : 'Ready to rank'}</span>}
+        <div className={`casino-pocket-cards ${hasRevealed ? 'casino-pocket-cards-revealed' : ''}`} aria-label={cardsAreVisible ? `${player.name}'s cards` : `${player.name}'s face-down cards`}>
+          {(cardsAreVisible ? player.cards : [0, 1]).map((value, cardIndex) => {
+            if (!cardsAreVisible) return <CardBack key={`${player.id}-back-${cardIndex}`}/>
+            return <Card key={`${player.id}-card-${cardIndex}-${value}`} value={value} small/>
+          })}
+        </div>
+        {pick && <div key={`${player.id}-${round}-${pick.value}`} className={`casino-player-token casino-player-token-${tokenSide}`} aria-label={`${player.name}'s token ${pick.value}`}><div className={`casino-chip chip-${color}`}><span>{pick.value}</span></div></div>}
+      </article>
     })}
 
     <div className="casino-board-center">
