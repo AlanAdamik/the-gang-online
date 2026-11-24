@@ -280,7 +280,7 @@ h1 em, h2 em { font-weight: 400; color: #9a7543; }
 .real-mode .casino-table-felt { background-image: linear-gradient(145deg, #214c3e, #183b32 58%, #1d493c), url('/poker-felt-texture.png'); }
 .real-table-stage { position: relative; isolation: isolate; display: flex; flex-direction: column; min-height: 0; overflow: hidden; border: 1px solid #453729; border-radius: 12px; background: radial-gradient(ellipse at center, #194238 0%, #102d28 68%, #0c211f 100%); box-shadow: inset 0 0 55px #071b1770, 0 10px 24px #18251c24; }
 .casino-table-surface { position: relative; isolation: isolate; flex: 0 0 auto; height: clamp(410px, 42vw, 520px); overflow: hidden; }
-.casino-table-token-picker { position: absolute; z-index: 4; right: 0; bottom: 4%; left: 0; width: min(72%, 660px); margin: 0 auto; padding: 8px 14px 10px; border: 1px solid #d0b47a99; border-radius: 9px; background: transparent; box-shadow: none; }
+.casino-table-token-picker { position: absolute; z-index: 4; right: 0; bottom: 4%; left: 0; width: min(72%, 660px); margin: 0 auto; padding: 8px 14px 10px; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .real-mode .casino-table-token-picker .token-picker { padding: 0; border: 0; border-radius: 0; color: #f7f3e8; background: transparent; box-shadow: none; }
 .casino-table-token-picker .token-picker-heading strong { color: #fff8e8; }
 .casino-table-token-picker .token-picker-heading span, .casino-table-token-picker .token-note { color: #e1dfd1; }
@@ -348,6 +348,7 @@ h1 em, h2 em { font-weight: 400; color: #9a7543; }
 .real-mode .rank-token:hover:not(:disabled) { border-color: var(--chip-edge); transform: translateY(-3px) rotate(-5deg); box-shadow: 0 6px 0 #66543844, 0 9px 13px #1e302533; }
 .real-mode .rank-token.is-selected { color: var(--chip-ink); background: radial-gradient(circle at 35% 26%, var(--chip-light), var(--chip-face) 67%, var(--chip-shadow)); }
 .real-mode .rank-token.is-selected span { color: #454c42; }
+.real-mode .token-picker-white .rank-token { --chip-face: #f3eee0; --chip-light: #fffdf5; --chip-shadow: #d2cbb8; --chip-edge: #8b897d; --chip-ink: #26362b; }
 .real-mode .token-picker-yellow .rank-token { --chip-face: #dfc36e; --chip-light: #f7e7a6; --chip-shadow: #ad8d42; --chip-edge: #725b29; --chip-ink: #352b19; }
 .real-mode .token-picker-orange .rank-token { --chip-face: #bc7043; --chip-light: #e59b68; --chip-shadow: #864b31; --chip-edge: #f0c091; --chip-ink: #fff8e9; }
 .real-mode .token-picker-red .rank-token { --chip-face: #aa4d43; --chip-light: #dc7665; --chip-shadow: #74332e; --chip-edge: #f0beb0; --chip-ink: #fff8e9; }
