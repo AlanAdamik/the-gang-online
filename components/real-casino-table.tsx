@@ -49,7 +49,7 @@ export function RealCasinoTable({ players, board, playerId, round, phase, reveal
     <button type="button" className="table-fullscreen-button" onClick={() => void toggleFullscreen()} aria-label={isFullscreen ? 'Exit full screen' : 'Enter full screen'} title={isFullscreen ? 'Exit full screen' : 'Enter full screen'}>
       {isFullscreen ? <Minimize size={17}/> : <Maximize size={17}/>}
     </button>
-    <div className="casino-table-surface">
+    <div className={`casino-table-surface ${tokenPicker ? 'casino-table-surface-picking' : ''}`}>
       <div className="casino-table-felt" aria-hidden="true" />
       {players.map((player, index) => {
       const angle = (index / players.length) * Math.PI * 2 - Math.PI / 2
@@ -77,7 +77,7 @@ export function RealCasinoTable({ players, board, playerId, round, phase, reveal
       </article>
     })}
 
-    <div className="casino-board-center">
+    <div className={`casino-board-center ${tokenPicker ? 'casino-board-center-picking' : ''}`}>
       <span className="casino-board-kicker">THE SHARED BOARD</span>
       <div className="casino-board-cards" aria-label={`Shared board, ${board.length} of 5 cards`}>
         {board.length ? board.map((card, index) => <div className="casino-dealt-card" key={card} style={{ animationDelay: `${index * 85}ms` }}><Card value={card} small/></div>) : <span className="casino-board-empty">{phase === 'ranking' ? 'The first cards are about to hit the felt' : 'The board will appear here'}</span>}
@@ -85,7 +85,7 @@ export function RealCasinoTable({ players, board, playerId, round, phase, reveal
       <span className="casino-board-count">{board.length} / 5 CARDS</span>
       {burningCard && <div className="casino-burn-card" aria-hidden="true"><CardBack/></div>}
       </div>
+      {tokenPicker && <div className="casino-table-token-picker">{tokenPicker}</div>}
     </div>
-    {tokenPicker && <div className="casino-table-token-picker">{tokenPicker}</div>}
   </section>
 }
