@@ -326,6 +326,17 @@ h1 em, h2 em { font-weight: 400; color: #9a7543; }
 .casino-board-cards .mini-hand-card .card-suit { font-size: 20px; }
 .casino-board-empty { max-width: 240px; color: #e1dfd1; font: italic 11px/1.45 Georgia,serif; }
 .casino-board-count { color: #ded2b3; font-size: 7px; letter-spacing: .16em; }
+.casino-revealed-hands { width: min(100%, 680px); max-height: min(26vh, 180px); display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 6px; overflow-y: auto; padding: 2px; }
+.casino-revealed-hand { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 5px 7px; border: 1px solid #d0b47a66; border-radius: 5px; background: #102d28d9; text-align: left; }
+.casino-revealed-hand-meta { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.casino-revealed-hand-meta span { overflow: hidden; color: #fff8e8; font-size: 9px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.casino-revealed-hand-meta strong { color: #f0d597; font-size: 9px; font-weight: 600; }
+.casino-revealed-hand-cards { display: flex; flex: 0 0 auto; gap: 3px; }
+.casino-revealed-hand-cards .mini-hand-card { width: 27px; height: 40px; flex-basis: 27px; border-radius: 3px; box-shadow: 0 3px 6px #06140f77; }
+.casino-revealed-hand-cards .card-corner { top: 3px; left: 3px; font-size: 7px; }
+.casino-revealed-hand-cards .card-corner small { font-size: 6px; }
+.casino-revealed-hand-cards .card-corner-bottom { top: auto; left: auto; right: 3px; bottom: 3px; }
+.casino-revealed-hand-cards .card-suit { font-size: 15px; }
 .casino-burn-card { position: absolute; top: 43%; left: 41%; pointer-events: none; animation: burn-card .64s ease-in both; }
 .casino-burn-card .casino-card-back { width: 31px; height: 45px; }
 .casino-burn-card .casino-card-back span { width: 20px; height: 31px; }
@@ -399,4 +410,8 @@ h1 em, h2 em { font-weight: 400; color: #9a7543; }
   .casino-board-center { top: 37%; width: 90%; gap: 6px; }
   .casino-board-center-picking { top: 26%; }
   .casino-table-token-picker { top: 51%; width: 91%; padding: 6px 7px; }
+  .casino-revealed-hands { grid-template-columns: repeat(auto-fit, minmax(116px, 1fr)); gap: 4px; max-height: min(23vh, 150px); }
+  .casino-revealed-hand { gap: 4px; padding: 4px; }
+  .casino-revealed-hand-meta span, .casino-revealed-hand-meta strong { font-size: 8px; }
+  .casino-revealed-hand-cards .mini-hand-card { width: 23px; height: 35px; flex-basis: 23px; }
 }

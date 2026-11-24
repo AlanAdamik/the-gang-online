@@ -17,7 +17,7 @@ type RealCasinoTableProps = {
   board: number[]
   playerId: string
   phase?: 'ranking' | 'challenge' | 'reveal' | 'result'
-  reveals: { playerId: string }[]
+  reveals: { playerId: string; cards: number[]; category: string; score: number }[]
   nextPlayerId?: string
   burningCard: boolean
   tokenPicker?: ReactNode
@@ -66,7 +66,7 @@ export function RealCasinoTable({ players, board, playerId, phase, reveals, next
       {opponents.map((player, index) => {
         const position = opponentSeats[Math.floor(index * opponentSeats.length / Math.max(opponents.length, 1))]
         const hasRevealed = reveals.some((reveal) => reveal.playerId === player.id)
-        const cardsAreVisible = phase === 'result' || phase === 'reveal' && hasRevealed
+        const cardsAreVisible = phase !== 'reveal' && phase !== 'result' && hasRevealed
         const isTheirTurn = phase === 'reveal' && nextPlayerId === player.id
 
         return <article key={player.id} className="casino-seat" style={{ left: `${position.left}%`, top: `${position.top}%` }} aria-label={`${player.name}${isTheirTurn ? ', it is your turn to reveal' : ''}`}>
@@ -93,8 +93,8 @@ export function RealCasinoTable({ players, board, playerId, phase, reveals, next
 
         return <article className="casino-seat casino-seat-you" aria-label={`${me.name}, you`}>
           <div className="casino-seat-name">{me.name}<span>YOU</span></div>
-          <div className={`casino-pocket-cards casino-pocket-cards-own ${hasRevealed ? 'casino-pocket-cards-revealed' : ''}`} aria-label="Your private cards">
-            {me.cards.map((value, cardIndex) => <Card key={`${me.id}-card-${cardIndex}-${value}`} value={value} small/>)}
+          <div className={`casino-pocket-cards casino-pocket-cards-own ${hasRevealed ? 'casino-pocket-cards-revealed' : ''}`} aria-label={hasRevealed ? 'Your cards are shown in the center of the table' : 'Your private cards'}>
+            {hasRevealed ? [0, 1].map((cardIndex) => <CardBack key={`${me.id}-back-${cardIndex}`}/>) : me.cards.map((value, cardIndex) => <Card key={`${me.id}-card-${cardIndex}-${value}`} value={value} small/>)}
           </div>
           <div className="casino-seat-token-history" aria-label="Your tokens by round">
             {(me.tokenPicks ?? []).slice().sort((a, b) => a.round - b.round).map((token) => <span className={`casino-seat-history-chip chip-${roundColors[token.round - 1] ?? 'red'}`} key={`${me.id}-${token.round}`} aria-label={`Round ${token.round}, token ${token.value}`} title={`Round ${token.round}`}>
@@ -107,12 +107,22 @@ export function RealCasinoTable({ players, board, playerId, phase, reveals, next
         </article>
       })()}
 
-      <div className={`casino-board-center ${tokenPicker ? 'casino-board-center-picking' : ''}`}>
+      <div className={`casino-board-center ${tokenPicker ? 'casino-board-center-picking' : ''} ${reveals.length && (phase === 'reveal' || phase === 'result') ? 'casino-board-center-revealing' : ''}`}>
         <span className="casino-board-kicker">THE SHARED BOARD</span>
         <div className="casino-board-cards" aria-label={`Shared board, ${board.length} of 5 cards`}>
           {board.length ? board.map((card, index) => <div className="casino-dealt-card" key={card} style={{ animationDelay: `${index * 85}ms` }}><Card value={card} small/></div>) : <span className="casino-board-empty">{phase === 'ranking' ? 'The first cards are about to hit the felt' : 'The board will appear here'}</span>}
         </div>
         <span className="casino-board-count">{board.length} / 5 CARDS</span>
+        {(phase === 'reveal' || phase === 'result') && reveals.length > 0 && <div className="casino-revealed-hands" aria-label={`${reveals.length} revealed ${reveals.length === 1 ? 'hand' : 'hands'}`}>
+          {reveals.map((reveal, index) => {
+            const player = players.find((candidate) => candidate.id === reveal.playerId)
+            const privateCards = reveal.cards.slice(0, reveal.cards.length - board.length)
+            return <article className="casino-revealed-hand" key={`${reveal.playerId}-${index}`} aria-label={`${player?.name ?? 'Player'}, ${reveal.category}`}>
+              <div className="casino-revealed-hand-meta"><span>{player?.name ?? 'Player'}</span><strong>{reveal.category}</strong></div>
+              <div className="casino-revealed-hand-cards">{privateCards.map((card, cardIndex) => <Card key={`${reveal.playerId}-${cardIndex}-${card}`} value={card} small/>)}</div>
+            </article>
+          })}
+        </div>}
         {burningCard && <div className="casino-burn-card" aria-hidden="true"><CardBack/></div>}
       </div>
       {tokenPicker && <div className="casino-table-token-picker">{tokenPicker}</div>}
