@@ -344,3 +344,53 @@ h1 em, h2 em { font-weight: 400; color: #9a7543; }
 @media (max-width: 760px) { .real-table-stage { min-height: 440px; }.casino-table-felt { inset: 12% 3%; border-width: 8px; }.casino-seat { width: min(128px, 29%); min-height: 96px; padding: 6px 3px; }.casino-board-center { width: 76%; }.casino-table-token-picker { width: min(88%, 660px); padding: 7px 9px; }.casino-board-center-picking { top: 33%; }.real-mode .token-options { grid-template-columns: repeat(auto-fit, minmax(50px, 1fr)); gap: 12px 5px; } }
 @media (max-width: 460px) { .game-view-toggle { align-self: center; }.real-table-stage { min-height: 418px; }.casino-table-felt { inset: 13% 2%; border-width: 7px; }.casino-seat { width: min(108px, 31%); min-height: 87px; gap: 3px; padding: 5px 2px; }.casino-seat-name { font-size: 9px; }.casino-pocket-cards .mini-hand-card { width: 23px; height: 34px; flex-basis: 23px; }.casino-board-center { width: 83%; gap: 7px; }.casino-board-cards { min-height: 61px; gap: 3px; }.casino-board-cards .mini-hand-card { width: clamp(28px, 8vw, 34px); height: clamp(42px, 12vw, 51px); flex-basis: clamp(28px, 8vw, 34px); }.real-mode .rank-token { width: 52px; min-height: 52px; }.real-mode .token-options { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 2px; row-gap: 26px; padding-bottom: 17px; } }
 @media (prefers-reduced-motion: reduce) { .casino-dealt-card, .casino-burn-card, .casino-chip { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }.real-mode .rank-token { transition: none; } }
+
+/* The felt becomes a player-facing table: opponents sit around the rail, while your hand stays at the bottom edge. */
+.real-mode .token-history { display: none; }
+.real-table-stage { min-height: 620px; }
+.casino-table-surface { height: clamp(560px, 54vw, 650px); }
+.casino-seat { width: min(150px, 19%); min-height: 112px; gap: 5px; }
+.casino-seat-you { top: auto; bottom: 1.5%; left: 50%; width: min(220px, 34%); min-height: 124px; justify-content: flex-start; padding: 8px 10px; transform: translateX(-50%); }
+.casino-pocket-cards-own { height: 66px; gap: 8px; }
+.casino-pocket-cards-own .mini-hand-card { width: 45px; height: 64px; flex-basis: 45px; }
+.casino-pocket-cards-own .mini-hand-card .card-corner { top: 4px; left: 4px; font-size: 10px; }
+.casino-pocket-cards-own .mini-hand-card .card-corner-bottom { top: auto; left: auto; right: 4px; bottom: 4px; }
+.casino-pocket-cards-own .mini-hand-card .card-suit { font-size: 22px; }
+.casino-seat-token-history { min-height: 22px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+.casino-seat-history-chip { width: 21px; height: 21px; display: grid; place-items: center; border: 2px dashed var(--chip-edge); border-radius: 50%; color: var(--chip-ink); background: radial-gradient(circle at 35% 28%, var(--chip-light), var(--chip-face) 64%, var(--chip-shadow)); box-shadow: 0 2px 4px #05140f66; font-size: 9px; font-weight: 800; }
+.casino-seat-history-chip.chip-white { --chip-face: #f3eee0; --chip-light: #fffdf5; --chip-shadow: #d2cbb8; --chip-edge: #8b897d; --chip-ink: #26362b; }
+.casino-seat-history-chip.chip-yellow { --chip-face: #dfc36e; --chip-light: #f7e7a6; --chip-shadow: #ad8d42; --chip-edge: #725b29; --chip-ink: #352b19; }
+.casino-seat-history-chip.chip-orange { --chip-face: #bc7043; --chip-light: #e59b68; --chip-shadow: #864b31; --chip-edge: #f0c091; --chip-ink: #fff8e9; }
+.casino-seat-history-chip.chip-red { --chip-face: #aa4d43; --chip-light: #dc7665; --chip-shadow: #74332e; --chip-edge: #f0beb0; --chip-ink: #fff8e9; }
+.casino-reveal-button { min-height: 28px; padding: 4px 10px; border: 1px solid #d5bd83; border-radius: 999px; color: #f8f2e4; background: #294d3f; font-size: 10px; font-weight: 700; cursor: pointer; }
+.casino-reveal-button:hover:not(:disabled), .casino-reveal-button:focus-visible { background: #3b6652; }
+.casino-reveal-button:focus-visible { outline: 2px solid #f0d597; outline-offset: 2px; }
+.casino-reveal-button:disabled { opacity: .65; cursor: wait; }
+.casino-seat-you .casino-reveal-button { color: #23382e; background: #e4cb91; }
+.casino-board-center { top: 39%; width: min(68%, 700px); }
+.casino-board-center-picking { top: 29%; }
+.casino-table-token-picker { top: 53%; right: 0; bottom: auto; width: min(68%, 660px); }
+@media (max-width: 760px) {
+  .real-table-stage { min-height: 590px; }
+  .casino-table-surface { height: 590px; }
+  .casino-table-felt { inset: 10% 2% 13%; }
+  .casino-seat { width: min(130px, 26%); min-height: 104px; }
+  .casino-seat-you { bottom: 1%; left: 50%; width: min(190px, 42%); min-height: 116px; }
+  .casino-board-center { top: 38%; width: 82%; }
+  .casino-board-center-picking { top: 27%; }
+  .casino-table-token-picker { top: 51%; width: 86%; }
+}
+@media (max-width: 460px) {
+  .real-table-stage { min-height: 550px; }
+  .casino-table-surface { height: 550px; }
+  .casino-table-felt { inset: 11% 1% 15%; border-width: 7px; }
+  .casino-seat { width: min(106px, 29%); min-height: 91px; gap: 3px; padding: 5px 2px; }
+  .casino-seat-name { font-size: 9px; }
+  .casino-seat-you { bottom: 1%; left: 50%; width: min(170px, 46%); min-height: 108px; }
+  .casino-pocket-cards-own { height: 58px; }
+  .casino-pocket-cards-own .mini-hand-card { width: 40px; height: 57px; flex-basis: 40px; }
+  .casino-seat-history-chip { width: 18px; height: 18px; font-size: 8px; }
+  .casino-board-center { top: 37%; width: 90%; gap: 6px; }
+  .casino-board-center-picking { top: 26%; }
+  .casino-table-token-picker { top: 51%; width: 91%; padding: 6px 7px; }
+}

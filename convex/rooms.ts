@@ -454,11 +454,11 @@ export const revealNextHand = mutation({
   handler: async (ctx, { code, playerId }) => {
     const room = await getRoomByCode(ctx, code)
     if (!room || room.status !== 'playing' || room.phase !== 'reveal') throw new Error('There is no hand waiting to be revealed.')
-    if (room.hostId !== playerId) throw new Error('Only the host can reveal the next hand.')
-    const revealOrder = room.revealOrder ?? []
-    const reveals = room.reveals ?? []
-    const nextId = revealOrder[reveals.length]
-    if (!nextId) throw new Error('Every hand has already been revealed.')
+  const revealOrder = room.revealOrder ?? []
+  const reveals = room.reveals ?? []
+  const nextId = revealOrder[reveals.length]
+  if (!nextId) throw new Error('Every hand has already been revealed.')
+  if (nextId !== playerId) throw new Error('It is not your turn to reveal your hand.')
     const player = room.players.find((entry: { id: string }) => entry.id === nextId)
     if (!player) throw new Error('This player is no longer at the table.')
     const hand = bestHand([...(player.cards ?? []), ...(room.communityCards ?? [])])

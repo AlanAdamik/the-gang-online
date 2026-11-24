@@ -159,7 +159,8 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
     })}</div>
     <p className="token-note">{currentPick ? `You chose token ${currentPick.value}. You can change it until everyone has ranked.` : 'Choose a token. You can take one from another player, who will need to choose again.'}</p>
   </div> : null
-  const realTable = displayMode === 'real' ? <RealCasinoTable players={room.players} board={board} playerId={playerId} round={room.round} phase={room.phase} reveals={reveals} burningCard={burningCard} tokenPicker={tokenPicker}/> : null
+  const canRevealHand = room.phase === 'reveal' && nextPlayer?.id === playerId
+  const realTable = displayMode === 'real' ? <RealCasinoTable players={room.players} board={board} playerId={playerId} phase={room.phase} reveals={reveals} nextPlayerId={nextPlayer?.id} burningCard={burningCard} tokenPicker={tokenPicker} revealBusy={busy} onRevealHand={() => void run(() => revealNextHand({ code: room.code, playerId }))}/> : null
   const completedChecks = room.completedChallengeChecks ?? []
   const currentChallengeCheck = (room.challengeChecks ?? []).find((id) => !completedChecks.includes(id))
 
@@ -270,7 +271,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
       <div className="hand-topline"><span><Eye size={15}/> The showdown</span><span>Lowest token first</span></div>
       <div className="community-row" aria-label="Community cards">{board.map((card) => <Card value={card} small key={card}/>)}</div>
       <div className="reveal-next-card">
-        {nextPlayer ? <><span className="section-kicker">NEXT UP · {reveals.length + 1} OF {room.players.length}</span><h2>{nextPlayer.name} is <em>on the spot.</em></h2><p>Reveal each hand in token order. The table must climb every time.</p></> : <><span className="section-kicker">SHOWDOWN COMPLETE</span><h2>The order is <em>set.</em></h2></>}
+        {nextPlayer ? <><span className="section-kicker">NEXT UP · {reveals.length + 1} OF {room.players.length}</span><h2>{canRevealHand ? <>Your hand is <em>up.</em></> : <>{nextPlayer.name} is <em>up.</em></>}</h2><p>Reveal in token order. The table must climb every time.</p></> : <><span className="section-kicker">SHOWDOWN COMPLETE</span><h2>The order is <em>set.</em></h2></>}
         {reveals.map((reveal, index) => {
           const player = room.players.find((candidate) => candidate.id === reveal.playerId)
           const pocketCards = player?.cards ?? reveal.cards.slice(0, reveal.cards.length - board.length)
@@ -279,7 +280,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
             <div className="reveal-cards">{pocketCards.map((card) => <Card value={card} small key={card}/>)}</div>
           </div>
         })}
-        {nextPlayer && <button className="button button-primary full-button" disabled={!isHost || busy} onClick={() => void run(() => revealNextHand({ code: room.code, playerId }))}>{busy ? <LoaderCircle className="spin" size={16}/> : <Eye size={16}/>} {isHost ? `Reveal ${nextPlayer.name}’s hand` : 'Waiting for the host to reveal'}</button>}
+        {nextPlayer && displayMode === 'text' && <button className="button button-primary full-button" disabled={!canRevealHand || busy} onClick={() => void run(() => revealNextHand({ code: room.code, playerId }))}>{busy ? <LoaderCircle className="spin" size={16}/> : <Eye size={16}/>} {canRevealHand ? 'Reveal your hand' : `Waiting for ${nextPlayer.name} to reveal`}</button>}
       </div>
       <div className="showdown-board"><span>SHARED BOARD</span>{board.map((card) => <Card value={card} small key={`board-${card}`}/>)}</div>
       <TokenHistory room={room}/>
