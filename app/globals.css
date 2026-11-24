@@ -250,10 +250,35 @@ h1 em, h2 em { font-weight: 400; color: #9a7543; }
 .game-view-toggle button[aria-pressed="true"] { color: #fffdf7; background: #214a3d; }
 .game-view-toggle button:focus-visible { outline-offset: 2px; }
 .room-page-active-game .hand-panel.real-mode { min-height: 0; padding: 0; border: 0; background: transparent; }
-.real-mode .game-table-row, .real-mode .token-history, .real-mode .mode-footnote, .real-mode > .showdown-board, .real-mode .reveal-history { display: none; }
+.real-mode .game-table-row, .real-mode .mode-footnote, .real-mode > .showdown-board, .real-mode .reveal-history { display: none; }
+.game-flow-panel { position: relative; }
+.challenge-fab { position: absolute; z-index: 5; top: 78px; left: -18px; }
+.challenge-fab-trigger { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid #d0b47a; border-radius: 50%; color: #f6e9c9; background: #214a3d; box-shadow: 0 4px 12px #102b2152; cursor: pointer; }
+.challenge-fab-trigger:hover, .challenge-fab-trigger:focus-visible { background: #315c4d; }
+.challenge-fab-details { position: absolute; top: 0; left: calc(100% + 10px); width: min(280px, calc(100vw - 92px)); display: none; padding: 14px; border: 1px solid #d0b47a; border-radius: 8px; color: #f8f3e7; background: #18372f; box-shadow: 0 10px 26px #06130f66; }
+.challenge-fab:hover .challenge-fab-details, .challenge-fab:focus-within .challenge-fab-details, .challenge-fab.is-open .challenge-fab-details { display: flex; flex-direction: column; gap: 10px; }
+.challenge-fab-details .section-kicker { color: #e2cc9d; font-size: 9px; letter-spacing: .14em; }
+.challenge-fab-details article { display: flex; flex-direction: column; gap: 3px; }
+.challenge-fab-details strong { font-size: 12px; }
+.challenge-fab-details p { margin: 0; color: #d9ddcf; font: 12px/1.5 Georgia,serif; }
+@media (max-width: 760px) { .challenge-fab { top: 60px; left: 0; }.challenge-fab-details { top: calc(100% + 8px); left: 0; } }
+.real-mode .token-history { display: block; }
+.casino-table-token { position: absolute; z-index: 3; transform: translate(-50%, -50%); }
+.casino-pocket-cards-revealed .mini-hand-card { animation: card-reveal .72s cubic-bezier(.2,.75,.25,1) both; }
+.casino-pocket-cards-revealed .mini-hand-card:nth-child(2) { animation-delay: 100ms; }
+@keyframes card-reveal { 0% { opacity: 0; transform: translateY(-34px) rotate(-16deg) rotateX(75deg) scale(.72); } 68% { opacity: 1; transform: translateY(10px) rotate(4deg) rotateX(0) scale(1.06); } 100% { opacity: 1; transform: translateY(0) rotate(0) rotateX(0) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .casino-pocket-cards-revealed .mini-hand-card { animation-duration: .01ms !important; animation-delay: 0ms !important; } }
 .real-mode .reveal-next-card .revealed-hand { display: none; }
 .real-mode .casino-table-felt { background-image: linear-gradient(145deg, #214c3e, #183b32 58%, #1d493c), url('/poker-felt-texture.png'); }
-.real-table-stage { position: relative; isolation: isolate; min-height: clamp(410px, 42vw, 520px); overflow: hidden; border: 1px solid #453729; border-radius: 12px; background: radial-gradient(ellipse at center, #194238 0%, #102d28 68%, #0c211f 100%); box-shadow: inset 0 0 55px #071b1770, 0 10px 24px #18251c24; }
+.real-table-stage { position: relative; isolation: isolate; display: flex; flex-direction: column; min-height: 0; overflow: hidden; border: 1px solid #453729; border-radius: 12px; background: radial-gradient(ellipse at center, #194238 0%, #102d28 68%, #0c211f 100%); box-shadow: inset 0 0 55px #071b1770, 0 10px 24px #18251c24; }
+.casino-table-surface { position: relative; isolation: isolate; flex: 0 0 auto; height: clamp(410px, 42vw, 520px); overflow: hidden; }
+.casino-table-token-picker { position: relative; z-index: 4; flex: 0 0 auto; padding: 10px 20px 13px; border-top: 1px solid #d0b47a66; background: linear-gradient(0deg, #102d28, #173a31); }
+.real-table-stage:fullscreen { width: 100vw; height: 100vh; min-height: 100vh; border: 0; border-radius: 0; }
+.real-table-stage:fullscreen .casino-table-surface { height: calc(100vh - 174px); min-height: 320px; }
+.real-table-stage:fullscreen .casino-table-felt { inset: 7% 8%; }
+.table-fullscreen-button { position: absolute; z-index: 4; top: 14px; right: 14px; width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid #d4bd8a99; border-radius: 50%; color: #f6e9c9; background: #18372fcf; cursor: pointer; }
+.table-fullscreen-button:hover, .table-fullscreen-button:focus-visible { background: #315c4d; }
+.table-fullscreen-button:focus-visible { outline: 2px solid #f0d597; outline-offset: 3px; }
 .casino-table-felt { position: absolute; z-index: 0; inset: 8% 6%; border: 12px solid #483222; border-radius: 50%; background-image: linear-gradient(145deg, #214c3e, #183b32 58%, #1d493c), url('/poker-felt-texture.png'); background-blend-mode: multiply, soft-light; background-size: cover; box-shadow: 0 0 0 3px #ad8655, 0 0 0 7px #241b16, inset 0 0 28px #071b1766, 0 12px 26px #07161199; }
 .casino-table-felt::after { position: absolute; inset: 7%; border: 1px solid #d2b27655; border-radius: 50%; content: ''; pointer-events: none; }
 .casino-seat { position: absolute; z-index: 2; width: min(142px, 24%); min-height: 102px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 6px; border: 1px solid #d0b47a8c; border-radius: 7px; color: #f7f3e8; background: linear-gradient(145deg, #18372feF, #102922f2); box-shadow: 0 5px 14px #06130f85, inset 0 1px #ffffff19; transform: translate(-50%, -50%); }
