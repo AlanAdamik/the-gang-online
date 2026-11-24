@@ -416,3 +416,72 @@ h1 em, h2 em { font-weight: 400; color: #9a7543; }
   .casino-revealed-hand-meta span, .casino-revealed-hand-meta strong { font-size: 8px; }
   .casino-revealed-hand-cards .mini-hand-card { width: 23px; height: 35px; flex-basis: 23px; }
 }
+
+.game-log-panel { width: 100%; border-top: 1px solid #e5e0d5; }
+.game-log-toggle { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 12px 2px; border: 0; color: var(--ink); background: transparent; text-align: left; }
+.game-log-toggle > span { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; }
+.game-log-toggle svg { color: #987a50; }
+.game-log-toggle small { color: var(--muted); font-size: 10px; font-weight: 500; }
+.game-log-body { padding: 4px 0 12px; }
+.game-log-heading, .replay-player-top, .replay-timeline-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.game-log-heading h3 { margin: 6px 0 4px; font: 400 19px Georgia,serif; }
+.game-log-heading p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.game-log-save, .game-log-saved button, .game-log-saved a { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 10px; border: 1px solid #d8c9ad; border-radius: 4px; color: #344b3b; background: #f8f4eb; font-size: 10px; font-weight: 700; text-decoration: none; white-space: nowrap; }
+.game-log-save:disabled { opacity: .6; cursor: wait; }
+.game-log-saved { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; padding: 10px; border: 1px solid #d8e1d3; border-radius: 4px; color: #416d4c; background: #f3f7f0; font-size: 10px; }
+.game-log-saved > span { display: flex; align-items: center; gap: 6px; flex: 1; }
+.game-log-saved button { border-color: #d4ddcf; background: #fff; }
+.game-log-empty { padding: 14px 0; color: var(--muted); font-size: 11px; }
+.game-log-events { display: flex; flex-direction: column; gap: 8px; max-height: 390px; overflow-y: auto; margin: 12px 0 0; padding: 0 5px 0 0; list-style: none; }
+.game-log-event { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 12px; border: 1px solid #e5e0d5; border-radius: 4px; color: var(--ink); background: #fffdf8; text-align: left; }
+button.game-log-event { cursor: pointer; }
+.game-log-event.is-active { border-color: #b99a69; background: #f8f3e8; box-shadow: inset 3px 0 #9a7543; }
+.game-log-event strong { font-size: 11px; line-height: 1.45; }
+.game-log-event-meta { width: 100%; display: flex; justify-content: space-between; gap: 10px; color: #8b765a; font-size: 8px; font-weight: 700; letter-spacing: .12em; }
+.game-log-event-meta time { color: var(--muted); font-weight: 500; letter-spacing: 0; }
+.game-log-event-note { color: var(--muted); font-size: 10px; }
+.game-log-cards { display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+.replay-shell { min-height: 100vh; background: var(--paper); }
+.replay-header { height: 68px; display: flex; align-items: center; justify-content: space-between; padding: 0 clamp(20px, 6vw, 84px); border-bottom: 1px solid rgba(39,51,41,.1); }
+.replay-header-label { color: #8b765a; font-size: 9px; font-weight: 700; letter-spacing: .16em; }
+.replay-content { width: min(100% - 40px, 880px); margin: 0 auto; padding: 30px 0 0; }
+.replay-back { display: inline-flex; align-items: center; gap: 7px; color: #737a71; font-size: 11px; text-decoration: none; }
+.replay-back:hover { color: var(--ink); }
+.replay-intro { display: flex; align-items: end; justify-content: space-between; gap: 20px; padding: 29px 0 21px; }
+.replay-intro h1 { margin: 14px 0 11px; font: 400 clamp(42px, 6vw, 58px)/.98 Georgia,serif; letter-spacing: -2.8px; }
+.replay-intro p { margin: 0; color: var(--muted); font: 13px Georgia,serif; }
+.replay-outcome { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 1px solid #e3ded3; border-radius: 5px; background: #fffdf8; }
+.replay-outcome span { color: #8b765a; font-size: 8px; font-weight: 700; letter-spacing: .14em; }
+.replay-outcome strong { color: #a34d42; font: 600 15px Georgia,serif; }
+.replay-outcome.is-success strong { color: #416d4c; }
+.replay-player-list { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 16px; }
+.replay-player-list span { padding: 6px 9px; border: 1px solid #e4ded1; border-radius: 20px; color: #586357; background: rgba(255,255,255,.58); font-size: 10px; }
+.replay-player, .replay-timeline { padding: 17px; border: 1px solid #e3ded3; border-radius: 6px; background: rgba(255,255,255,.6); }
+.replay-player-top h2, .replay-timeline-heading h2 { margin: 5px 0 0; font: 400 21px Georgia,serif; }
+.replay-controls { display: flex; gap: 7px; }
+.replay-control { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid #ded8cc; border-radius: 50%; color: #465a49; background: #fffdf8; }
+.replay-control:disabled { opacity: .45; cursor: not-allowed; }
+.replay-scrubber { display: block; width: 100%; margin: 17px 0 5px; accent-color: var(--felt); }
+.replay-step-labels { display: flex; justify-content: space-between; color: var(--muted); font-size: 8px; font-weight: 700; letter-spacing: .12em; }
+.replay-player > .game-log-event { margin-top: 14px; }
+.replay-timeline { margin-top: 15px; }
+.replay-timeline-heading { padding-bottom: 12px; border-bottom: 1px solid #ece8df; }
+.replay-timeline-heading > span { color: var(--muted); font-size: 10px; }
+.replay-events { max-height: none; overflow: visible; }
+.replay-footer { display: flex; justify-content: space-between; gap: 12px; padding: 18px 0 25px; color: #98988e; font-size: 9px; }
+.replay-footer > span:first-child { letter-spacing: .11em; }
+.replay-loading, .replay-missing { min-height: 75vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; }
+.replay-loading { flex-direction: row; color: var(--muted); font: 14px Georgia,serif; }
+.replay-missing > svg { color: #9a7543; }
+.replay-missing h1 { margin: 3px 0; font: 400 clamp(36px, 6vw, 54px) Georgia,serif; }
+.replay-missing p { max-width: 360px; color: var(--muted); font: 14px/1.5 Georgia,serif; }
+.replay-missing .button { text-decoration: none; }
+@media (max-width: 600px) {
+  .game-log-heading, .replay-intro { align-items: flex-start; flex-direction: column; }
+  .game-log-save { align-self: flex-start; }
+  .replay-header { height: 60px; padding: 0 16px; }
+  .replay-content { width: min(100% - 28px, 880px); padding-top: 20px; }
+  .replay-intro { padding: 24px 0 18px; }
+  .replay-player, .replay-timeline { padding: 12px; }
+  .replay-footer { flex-direction: column; }
+}

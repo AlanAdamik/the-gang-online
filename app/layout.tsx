@@ -5,7 +5,7 @@ import { ConvexClientProvider } from './convex-provider'
 
 export const metadata: Metadata = {
   title: 'The Gang — Play Together',
-  description: 'A cooperative poker-inspired card game. Gather your crew, share a room code, and play your hand together.',
+  description: 'A cooperative card game with live game logs and replayable saved matches. Gather your crew and play together.',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -40,7 +40,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="bg-background">
       <body className="antialiased">
         <ConvexClientProvider>{children}</ConvexClientProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}

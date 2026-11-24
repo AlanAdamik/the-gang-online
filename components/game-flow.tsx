@@ -5,6 +5,7 @@ import { useMutation } from 'convex/react'
 import { api } from '../convex/_generated/api'
 import { Card } from './playing-card'
 import { RealCasinoTable } from './real-casino-table'
+import { GameLogPanel } from './game-log'
 import { Check, Eye, Flame, LoaderCircle, Shield, Sparkles } from 'lucide-react'
 
 type GameFlowProps = {
@@ -229,6 +230,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
       </div>
       <div className="showdown-board"><span>SHARED BOARD</span>{board.map((card) => <Card value={card} small key={`board-${card}`}/>)}</div>
       <TokenHistory room={room}/>
+      <GameLogPanel code={room.code} playerId={playerId} finished={room.status === 'finished'} />
       {error && <p className="error-message" role="alert">{error}</p>}
     </section>
   }
@@ -259,6 +261,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
       </div>
       <div className="showdown-board"><span>SHARED BOARD</span>{board.map((card) => <Card value={card} small key={`board-${card}`}/>)}</div>
       <TokenHistory room={room}/>
+      <GameLogPanel code={room.code} playerId={playerId} finished={room.status === 'finished'} />
       {error && <p className="error-message" role="alert">{error}</p>}
     </section>
   }
@@ -284,6 +287,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
       </div>
       <div className="showdown-board"><span>SHARED BOARD</span>{board.map((card) => <Card value={card} small key={`board-${card}`}/>)}</div>
       <TokenHistory room={room}/>
+      <GameLogPanel code={room.code} playerId={playerId} finished={room.status === 'finished'} />
       {error && <p className="error-message" role="alert">{error}</p>}
     </section>
   }
@@ -308,6 +312,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
     </div>
     {displayMode === 'text' && tokenPicker}
     <TokenHistory room={room}/>
+    <GameLogPanel code={room.code} playerId={playerId} finished={room.status === 'finished'} />
     {error && <p className="error-message" role="alert">{error}</p>}
     <div className="mode-footnote">{modeCopy(room.mode)}</div>
   </section>

@@ -34,9 +34,59 @@ const tokenStealNotice = v.object({
   createdAt: v.number(),
 })
 
+const gameLogEventDetails = v.object({
+  round: v.optional(v.number()),
+  playerId: v.optional(v.string()),
+  playerName: v.optional(v.string()),
+  value: v.optional(v.number()),
+  previousValue: v.optional(v.number()),
+  displacedPlayerName: v.optional(v.string()),
+  cards: v.optional(v.array(v.number())),
+  category: v.optional(v.string()),
+  mode: v.optional(v.string()),
+  activeChallengeCards: v.optional(v.array(v.number())),
+  specialistCard: v.optional(v.number()),
+  challengeCard: v.optional(v.number()),
+  guess: v.optional(v.string()),
+  correct: v.optional(v.boolean()),
+  outcome: v.optional(v.union(v.literal('success'), v.literal('failed'))),
+  alarms: v.optional(v.number()),
+})
+
 export default defineSchema({
+  gameLogs: defineTable({
+    code: v.string(),
+    players: v.array(v.object({ id: v.string(), name: v.string() })),
+    mode: v.union(v.literal('advanced'), v.literal('professional'), v.literal('master-thief')),
+    createdAt: v.number(),
+    eventCount: v.number(),
+    shareKey: v.optional(v.string()),
+    savedAt: v.optional(v.number()),
+    finishedAt: v.optional(v.number()),
+    outcome: v.optional(v.union(v.literal('success'), v.literal('failed'))),
+  })
+    .index('by_share_key', ['shareKey'])
+    .index('by_created_at', ['createdAt']),
+  gameLogEvents: defineTable({
+    gameLogId: v.id('gameLogs'),
+    sequence: v.number(),
+    type: v.union(
+      v.literal('game_started'),
+      v.literal('heist_started'),
+      v.literal('token_picked'),
+      v.literal('board_revealed'),
+      v.literal('challenge_resolved'),
+      v.literal('hand_revealed'),
+      v.literal('heist_outcome'),
+      v.literal('game_finished'),
+    ),
+    createdAt: v.number(),
+    details: gameLogEventDetails,
+  })
+    .index('by_game_and_sequence', ['gameLogId', 'sequence']),
   rooms: defineTable({
     code: v.string(),
+    gameLogId: v.optional(v.id('gameLogs')),
     hostId: v.string(),
     players: v.array(player),
     status: v.union(v.literal('lobby'), v.literal('playing'), v.literal('finished')),

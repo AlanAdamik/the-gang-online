@@ -1,6 +1,7 @@
 import { mutation, query } from './_generated/server'
 import type { MutationCtx, QueryCtx } from './_generated/server'
 import { v } from 'convex/values'
+import type { Id } from './_generated/dataModel'
 
 const tokenPickValidator = v.object({ round: v.number(), value: v.number() })
 const tokenHistoryValidator = v.object({ round: v.number(), playerId: v.string(), value: v.number() })
@@ -45,6 +46,44 @@ const roomValidator = v.object({
   completedChallengeChecks: v.optional(v.array(v.number())),
   tokenStealNotice: v.optional(v.object({ targetPlayerId: v.string(), thiefName: v.string(), value: v.number(), createdAt: v.number() })),
   tokenHistory: v.optional(v.array(tokenHistoryValidator)),
+  gameLogId: v.optional(v.id('gameLogs')),
+})
+const gameLogEventType = v.union(
+  v.literal('game_started'),
+  v.literal('heist_started'),
+  v.literal('token_picked'),
+  v.literal('board_revealed'),
+  v.literal('challenge_resolved'),
+  v.literal('hand_revealed'),
+  v.literal('heist_outcome'),
+  v.literal('game_finished'),
+)
+const gameLogEventDetailsValidator = v.object({
+  round: v.optional(v.number()),
+  playerId: v.optional(v.string()),
+  playerName: v.optional(v.string()),
+  value: v.optional(v.number()),
+  previousValue: v.optional(v.number()),
+  displacedPlayerName: v.optional(v.string()),
+  cards: v.optional(v.array(v.number())),
+  category: v.optional(v.string()),
+  mode: v.optional(v.string()),
+  activeChallengeCards: v.optional(v.array(v.number())),
+  specialistCard: v.optional(v.number()),
+  challengeCard: v.optional(v.number()),
+  guess: v.optional(v.string()),
+  correct: v.optional(v.boolean()),
+  outcome: v.optional(v.union(v.literal('success'), v.literal('failed'))),
+  alarms: v.optional(v.number()),
+})
+const gameLogEventValidator = v.object({
+  _id: v.id('gameLogEvents'),
+  _creationTime: v.number(),
+  gameLogId: v.id('gameLogs'),
+  sequence: v.number(),
+  type: gameLogEventType,
+  createdAt: v.number(),
+  details: gameLogEventDetailsValidator,
 })
 
 const challengeNames = [
@@ -153,6 +192,65 @@ function getRoomByCode(ctx: QueryCtx | MutationCtx, code: string) {
   return ctx.db.query('rooms').withIndex('by_code', (q) => q.eq('code', code.trim().toUpperCase())).unique()
 }
 
+type GameLogEventDetails = {
+  round?: number
+  playerId?: string
+  playerName?: string
+  value?: number
+  previousValue?: number
+  displacedPlayerName?: string
+  cards?: number[]
+  category?: string
+  mode?: string
+  activeChallengeCards?: number[]
+  specialistCard?: number
+  challengeCard?: number
+  guess?: string
+  correct?: boolean
+  outcome?: 'success' | 'failed'
+  alarms?: number
+}
+
+type GameLogEventType =
+  | 'game_started'
+  | 'heist_started'
+  | 'token_picked'
+  | 'board_revealed'
+  | 'challenge_resolved'
+  | 'hand_revealed'
+  | 'heist_outcome'
+  | 'game_finished'
+
+async function recordGameEvent(
+  ctx: MutationCtx,
+  gameLogId: Id<'gameLogs'> | undefined,
+  type: GameLogEventType,
+  details: GameLogEventDetails,
+) {
+  if (!gameLogId) return
+  const gameLog = await ctx.db.get(gameLogId)
+  if (!gameLog) return
+  const sequence = gameLog.eventCount + 1
+  const cleanDetails = Object.fromEntries(Object.entries(details).filter(([, value]) => value !== undefined)) as GameLogEventDetails
+  await ctx.db.insert('gameLogEvents', { gameLogId, sequence, type, createdAt: Date.now(), details: cleanDetails })
+  await ctx.db.patch(gameLogId, { eventCount: sequence })
+}
+
+async function recordHeistOutcome(
+  ctx: MutationCtx,
+  gameLogId: Id<'gameLogs'> | undefined,
+  round: number,
+  outcome: 'success' | 'failed',
+  alarms: number,
+  gameFinished: boolean,
+) {
+  await recordGameEvent(ctx, gameLogId, 'heist_outcome', { round, outcome, alarms })
+  if (gameFinished) {
+    await recordGameEvent(ctx, gameLogId, 'game_finished', { round, outcome, alarms })
+    if (gameLogId) await ctx.db.patch(gameLogId, { finishedAt: Date.now(), outcome })
+  }
+}
+
 export const getRoom = query({
   args: { code: v.string(), playerId: v.string() },
   returns: v.union(roomValidator, v.null()),
@@ -169,6 +267,68 @@ export const getRoom = query({
         tokenPicks: player.tokenPicks ?? [],
       })),
     }
+  },
+})
+
+export const getGameLog = query({
+  args: { code: v.string(), playerId: v.string() },
+  returns: v.union(v.object({ shareKey: v.union(v.string(), v.null()), events: v.array(gameLogEventValidator) }), v.null()),
+  handler: async (ctx, { code, playerId }) => {
+    const room = await getRoomByCode(ctx, code)
+    if (!room || !room.gameLogId || !room.players.some((player) => player.id === playerId)) return null
+    const gameLog = await ctx.db.get(room.gameLogId)
+    if (!gameLog) return null
+    const events = await ctx.db.query('gameLogEvents')
+      .withIndex('by_game_and_sequence', (q) => q.eq('gameLogId', room.gameLogId!))
+      .order('asc')
+      .collect()
+    return { shareKey: gameLog.shareKey ?? null, events }
+  },
+})
+
+export const getSavedReplay = query({
+  args: { shareKey: v.string() },
+  returns: v.union(v.object({
+    code: v.string(),
+    players: v.array(v.object({ id: v.string(), name: v.string() })),
+    mode: v.union(v.literal('advanced'), v.literal('professional'), v.literal('master-thief')),
+    createdAt: v.number(),
+    finishedAt: v.union(v.number(), v.null()),
+    outcome: v.union(v.literal('success'), v.literal('failed'), v.null()),
+    events: v.array(gameLogEventValidator),
+  }), v.null()),
+  handler: async (ctx, { shareKey }) => {
+    const gameLog = await ctx.db.query('gameLogs').withIndex('by_share_key', (q) => q.eq('shareKey', shareKey)).unique()
+    if (!gameLog || !gameLog.savedAt) return null
+    const events = await ctx.db.query('gameLogEvents')
+      .withIndex('by_game_and_sequence', (q) => q.eq('gameLogId', gameLog._id))
+      .order('asc')
+      .collect()
+    return {
+      code: gameLog.code,
+      players: gameLog.players,
+      mode: gameLog.mode,
+      createdAt: gameLog.createdAt,
+      finishedAt: gameLog.finishedAt ?? null,
+      outcome: gameLog.outcome ?? null,
+      events,
+    }
+  },
+})
+
+export const saveGameLog = mutation({
+  args: { code: v.string(), playerId: v.string(), shareKey: v.string() },
+  returns: v.string(),
+  handler: async (ctx, { code, playerId, shareKey }) => {
+    const room = await getRoomByCode(ctx, code)
+    if (!room || !room.gameLogId || !room.players.some((player) => player.id === playerId)) throw new Error('Only a player at this table can save the replay.')
+    const gameLog = await ctx.db.get(room.gameLogId)
+    if (!gameLog) throw new Error('The game log could not be found.')
+    if (gameLog.shareKey) return gameLog.shareKey
+    const keyOwner = await ctx.db.query('gameLogs').withIndex('by_share_key', (q) => q.eq('shareKey', shareKey)).unique()
+    if (keyOwner) throw new Error('Could not create a replay link. Please try again.')
+    await ctx.db.patch(gameLog._id, { shareKey, savedAt: Date.now() })
+    return shareKey
   },
 })
 
@@ -272,8 +432,19 @@ export const startGame = mutation({
       communityCards = flop.communityCards
       round = 2
     }
+    const createdAt = Date.now()
+    const gameLogId = await ctx.db.insert('gameLogs', {
+      code: room.code,
+      players: room.players.map((player) => ({ id: player.id, name: player.name })),
+      mode,
+      createdAt,
+      eventCount: 0,
+    })
+    await recordGameEvent(ctx, gameLogId, 'game_started', { mode, activeChallengeCards, round: 1 })
+    if (communityCards.length) await recordGameEvent(ctx, gameLogId, 'board_revealed', { round: 1, cards: communityCards })
     await ctx.db.patch(room._id, {
       players: dealtPlayers,
+      gameLogId,
       tokenHistory: [],
       status: 'playing',
       mode,
@@ -328,6 +499,16 @@ export const pickToken = mutation({
       ...(room.tokenHistory ?? []).filter((entry: any) => entry.round !== room.round || (entry.playerId !== playerId && entry.playerId !== previousOwner?.id)),
       { round: room.round, playerId, value },
     ]
+    if (currentPick?.value !== value || previousOwner) {
+      await recordGameEvent(ctx, room.gameLogId, 'token_picked', {
+        round: room.round,
+        playerId,
+        playerName: player.name,
+        value,
+        previousValue: currentPick?.value,
+        displacedPlayerName: previousOwner?.name,
+      })
+    }
     if (!players.every((item: any) => item.tokenPicks.some((pick: any) => pick.round === room.round))) {
       await ctx.db.patch(room._id, { players, tokenStealNotice, tokenHistory })
       return null
@@ -388,6 +569,8 @@ export const pickToken = mutation({
       return null
     }
 
+    const addedBoardCards = communityCards.slice((room.communityCards ?? []).length)
+    if (addedBoardCards.length) await recordGameEvent(ctx, room.gameLogId, 'board_revealed', { round: room.round, cards: addedBoardCards })
     if (activeChallengeCards.includes(8)) {
       const previousRound = activeChallengeCards.includes(5) && room.round === 2 ? 2 : round - 1
       for (const item of players as any[]) item.tokenPicks = item.tokenPicks.filter((pick: any) => pick.round !== previousRound)
@@ -411,8 +594,10 @@ export const submitChallengeGuess = mutation({
     const target = room.players.find((player) => player.tokenPicks?.some((pick) => pick.round === 4 && pick.value === topTokenValue))
     if (!target) throw new Error('The highest red-token player could not be found.')
     let correct = false
+    let guessLabel = String(guess)
     if (challengeId === 4) {
       if (!Number.isInteger(guess) || guess < 2 || guess > 14) throw new Error('Choose a card value from 2 through Ace.')
+      guessLabel = guess === 14 ? 'Ace' : guess >= 11 ? ['Jack', 'Queen', 'King'][guess - 11] : String(guess)
       correct = target.cards.some((card) => {
         const rank = ((card - 1) % 13) + 1
         return (rank === 1 ? 14 : rank + 1) === guess
@@ -420,9 +605,17 @@ export const submitChallengeGuess = mutation({
     } else {
       const categories = ['High card', 'One pair', 'Two pair', 'Three of a kind', 'Straight', 'Flush', 'Full house', 'Four of a kind', 'Straight flush']
       if (!Number.isInteger(guess) || guess < 0 || guess >= categories.length) throw new Error('Choose a valid poker hand category.')
+      guessLabel = categories[guess]
       const hand = bestHand([...(target.cards ?? []), ...(room.communityCards ?? [])])
-      correct = categories[guess] === hand.category
+      correct = guessLabel === hand.category
     }
+    await recordGameEvent(ctx, room.gameLogId, 'challenge_resolved', {
+      round: 4,
+      playerName: target.name,
+      challengeCard: challengeId,
+      guess: guessLabel,
+      correct,
+    })
     if (correct) {
       const completedChallengeChecks = [...completed, challengeId]
       const checksFinished = completedChallengeChecks.length === (room.challengeChecks ?? []).length
@@ -433,6 +626,7 @@ export const submitChallengeGuess = mutation({
     const limit = room.mode === 'master-thief' ? 2 : 3
     const challengeDraw = room.mode === 'master-thief' ? drawChallengeCard(room.challengeDeck, 'master-thief', room.activeChallengeCards ?? []) : null
     const specialistDraw = room.mode === 'master-thief' ? null : drawSpecialistCard(room.specialistDeck)
+    await recordHeistOutcome(ctx, room.gameLogId, room.round, 'failed', alarms, alarms >= limit)
     await ctx.db.patch(room._id, {
       phase: 'result',
       outcome: 'failed',
@@ -464,12 +658,20 @@ export const revealNextHand = mutation({
     const hand = bestHand([...(player.cards ?? []), ...(room.communityCards ?? [])])
     const reveal = { playerId: nextId, cards: [...(player.cards ?? []), ...(room.communityCards ?? [])], category: hand.category, score: hand.score }
     const updatedReveals = [...reveals, reveal]
+    await recordGameEvent(ctx, room.gameLogId, 'hand_revealed', {
+      round: room.round,
+      playerId: nextId,
+      playerName: player.name,
+      cards: reveal.cards,
+      category: hand.category,
+    })
     const previous = reveals[reveals.length - 1]
     if (previous && hand.score <= previous.score) {
       const alarms = (room.alarms ?? 0) + 1
       const limit = room.mode === 'master-thief' ? 2 : 3
       const challengeDraw = room.mode === 'master-thief' ? drawChallengeCard(room.challengeDeck, 'master-thief', room.activeChallengeCards ?? []) : null
       const specialistDraw = room.mode === 'master-thief' ? null : drawSpecialistCard(room.specialistDeck)
+      await recordHeistOutcome(ctx, room.gameLogId, room.round, 'failed', alarms, alarms >= limit)
       await ctx.db.patch(room._id, {
         reveals: updatedReveals,
         phase: 'result',
@@ -487,6 +689,7 @@ export const revealNextHand = mutation({
     if (updatedReveals.length === revealOrder.length) {
       const mode = room.mode ?? 'advanced'
       const challengeDraw = drawChallengeCard(room.challengeDeck, mode, room.activeChallengeCards ?? [])
+      await recordHeistOutcome(ctx, room.gameLogId, room.round, 'success', room.alarms ?? 0, false)
       await ctx.db.patch(room._id, {
         reveals: updatedReveals,
         phase: 'result',
@@ -545,6 +748,12 @@ export const startNextHeist = mutation({
       communityCards = flop.communityCards
       round = 2
     }
+    await recordGameEvent(ctx, room.gameLogId, 'heist_started', {
+      round,
+      activeChallengeCards,
+      specialistCard: activeSpecialistCard,
+    })
+    if (communityCards.length) await recordGameEvent(ctx, room.gameLogId, 'board_revealed', { round: 1, cards: communityCards })
     await ctx.db.patch(room._id, {
       status: 'playing',
       phase: 'ranking',
