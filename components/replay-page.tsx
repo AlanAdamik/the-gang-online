@@ -32,7 +32,7 @@ export function ReplayPage({ shareKey }: { shareKey: string }) {
         {currentEvent && <GameLogEventCard event={currentEvent} active />}
       </section>
       <section className="replay-timeline"><div className="replay-timeline-heading"><div><span className="section-kicker">FULL TIMELINE</span><h2>Game log</h2></div><span>{events.length} recorded events</span></div><ol className="game-log-events replay-events">{events.map((event, index) => <li key={event._id}><GameLogEventCard event={event} active={index === currentStep} onSelect={() => setStep(index)} /></li>)}</ol></section>
-      <footer className="replay-footer"><span>THE GANG <span className="brand-period">.</span></span><span>Saved replays are viewable by anyone with this link.</span></footer>
+      <footer className="replay-footer"><span>THE GANG <span className="brand-period">.</span></span><span>Saved replays are viewable by anyone with this link.</span><span className="footer-credit"><em>The Gang</em> by John Cooper &amp; Kory Heath, published by KOSMOS. Unofficial fan adaptation.</span></footer>
     </div>
   </main>
 }

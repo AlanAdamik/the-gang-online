@@ -134,7 +134,7 @@ function drawSpecialistCard(deck: number[] | undefined) {
 function scoreFiveCards(cards: number[]) {
   const ranks = cards.map((card) => {
     const rank = ((card - 1) % 13) + 1
-    return rank === 1 ? 14 : rank + 1
+    return rank === 1 ? 14 : rank
   })
   const suits = cards.map((card) => Math.floor((card - 1) / 13))
   const counts = new Map<number, number>()
@@ -600,7 +600,7 @@ export const submitChallengeGuess = mutation({
       guessLabel = guess === 14 ? 'Ace' : guess >= 11 ? ['Jack', 'Queen', 'King'][guess - 11] : String(guess)
       correct = target.cards.some((card) => {
         const rank = ((card - 1) % 13) + 1
-        return (rank === 1 ? 14 : rank + 1) === guess
+        return (rank === 1 ? 14 : rank) === guess
       })
     } else {
       const categories = ['High card', 'One pair', 'Two pair', 'Three of a kind', 'Straight', 'Flush', 'Full house', 'Four of a kind', 'Straight flush']
@@ -666,7 +666,8 @@ export const revealNextHand = mutation({
       category: hand.category,
     })
     const previous = reveals[reveals.length - 1]
-    if (previous && hand.score <= previous.score) {
+    // Equal hands may be revealed in either order; only a strictly weaker hand trips the alarm.
+    if (previous && hand.score < previous.score) {
       const alarms = (room.alarms ?? 0) + 1
       const limit = room.mode === 'master-thief' ? 2 : 3
       const challengeDraw = room.mode === 'master-thief' ? drawChallengeCard(room.challengeDeck, 'master-thief', room.activeChallengeCards ?? []) : null

@@ -138,7 +138,7 @@ function GamePage() {
           <div className="art-caption"><span>♠</span> One table. One team. <span>♥</span></div>
         </div>
         <div id="how-to-play" className="how-section"><div className="how-intro"><span className="section-kicker">THE SHORT VERSION</span><h2>Easy to learn.<br/><em>Hard to read.</em></h2></div><div className="how-steps"><article><span className="step-num">01</span><h3>Gather your gang</h3><p>Make a room, share the code, and wait for your people to pull up a chair.</p></article><article><span className="step-num">02</span><h3>Read the room</h3><p>Everyone gets a hand. Figure out where your cards belong without giving it away.</p></article><article><span className="step-num">03</span><h3>Trust your gut</h3><p>Put your cards in order together. The table wins — or loses — as one.</p></article></div></div>
-        <footer className="footer"><span>Made for game night, wherever you are.</span><span>♥ &nbsp;PLAY NICE, PLAY TOGETHER</span></footer>
+        <footer className="footer"><span>Made for game night, wherever you are.</span><span className="footer-credit">Fan-made adaptation of <em>The Gang</em>, a card game designed by John Cooper &amp; Kory Heath and published by KOSMOS. Not affiliated with or endorsed by the creators or publisher.</span><span>♥ &nbsp;PLAY NICE, PLAY TOGETHER</span></footer>
       </section> : <section className={`room-page ${isActiveGame ? 'room-page-active-game' : ''}`}>
         {!isActiveGame && <button className="back-button" onClick={exitRoom}><ArrowLeft size={15}/> Leave table</button>}
         {!room ? <div className="loading-room"><LoaderCircle className="spin" size={22}/> Pulling up a chair…</div> : <>
