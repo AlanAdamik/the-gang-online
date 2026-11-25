@@ -77,6 +77,7 @@ export default defineSchema({
       v.literal('board_revealed'),
       v.literal('challenge_resolved'),
       v.literal('hand_revealed'),
+      v.literal('specialist_used'),
       v.literal('heist_outcome'),
       v.literal('game_finished'),
     ),
@@ -111,6 +112,7 @@ export default defineSchema({
     completedChallengeChecks: v.optional(v.array(v.number())),
     tokenStealNotice: v.optional(tokenStealNotice),
     tokenHistory: v.optional(v.array(tokenHistoryEntry)),
+    specialistUse: v.optional(v.object({ card: v.number(), playerId: v.string(), playerName: v.string(), round: v.number(), category: v.string() })),
   })
     .index('by_code', ['code'])
     .index('by_created_at', ['createdAt']),

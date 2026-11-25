@@ -21,6 +21,7 @@ type RealCasinoTableProps = {
   nextPlayerId?: string
   burningCard: boolean
   tokenPicker?: ReactNode
+  modifiers?: ReactNode
   revealBusy: boolean
   onRevealHand: () => void
 }
@@ -38,21 +39,21 @@ function CardBack() {
   return <div className="casino-card-back" aria-label="Face-down card"><span>✳</span></div>
 }
 
-export function RealCasinoTable({ players, board, playerId, phase, reveals, nextPlayerId, burningCard, tokenPicker, revealBusy, onRevealHand }: RealCasinoTableProps) {
+export function RealCasinoTable({ players, board, playerId, phase, reveals, nextPlayerId, burningCard, tokenPicker, modifiers, revealBusy, onRevealHand }: RealCasinoTableProps) {
   const stageRef = useRef<HTMLElement>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   useEffect(() => {
-    const syncFullscreen = () => setIsFullscreen(document.fullscreenElement === stageRef.current?.closest('.game-shell'))
+    const syncFullscreen = () => setIsFullscreen(document.fullscreenElement === stageRef.current)
     document.addEventListener('fullscreenchange', syncFullscreen)
     return () => document.removeEventListener('fullscreenchange', syncFullscreen)
   }, [])
 
   async function toggleFullscreen() {
-    const gameShell = stageRef.current?.closest<HTMLElement>('.game-shell')
-    if (!gameShell) return
-    if (document.fullscreenElement === gameShell) await document.exitFullscreen()
-    else await gameShell.requestFullscreen()
+    const stage = stageRef.current
+    if (!stage) return
+    if (document.fullscreenElement === stage) await document.exitFullscreen()
+    else await stage.requestFullscreen()
   }
 
   const opponents = players.filter((player) => player.id !== playerId)
@@ -126,6 +127,7 @@ export function RealCasinoTable({ players, board, playerId, phase, reveals, next
         {burningCard && <div className="casino-burn-card" aria-hidden="true"><CardBack/></div>}
       </div>
       {tokenPicker && <div className="casino-table-token-picker">{tokenPicker}</div>}
+      {modifiers && <div className="casino-table-modifiers">{modifiers}</div>}
     </div>
   </section>
 }

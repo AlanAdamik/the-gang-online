@@ -30,6 +30,7 @@ type GameFlowProps = {
     completedChallengeChecks?: number[]
     tokenStealNotice?: { targetPlayerId: string; thiefName: string; value: number; createdAt: number }
     tokenHistory?: { round: number; playerId: string; value: number }[]
+    specialistUse?: { card: number; playerId: string; playerName: string; round: number; category: string }
     players: { id: string; name: string; cards: number[]; tokenPicks?: { round: number; value: number }[] }[]
   }
   playerId: string
@@ -86,6 +87,41 @@ function ActiveChallengeFab({ cards }: { cards: number[] }) {
   </div>
 }
 
+function TableModifiers({ room, busy, onUseGetawayDriver }: { room: GameFlowProps['room']; busy: boolean; onUseGetawayDriver: () => void }) {
+  const challenges = room.activeChallengeCards ?? []
+  const specialist = room.activeSpecialistCard
+  const use = room.specialistUse
+  const showPending = room.phase === 'result'
+  const pendingChallenge = showPending ? room.pendingChallengeCard : undefined
+  const pendingSpecialist = showPending ? room.pendingSpecialistCard : undefined
+  if (!challenges.length && !specialist && !pendingChallenge && !pendingSpecialist) return null
+  const canUseGetawayDriver = specialist === 2 && room.phase === 'ranking' && !use
+
+  return <div className="table-modifiers" role="region" aria-label="Active modifiers">
+    {challenges.map((id) => <details className="table-modifier table-modifier-challenge" key={`challenge-${id}`}>
+      <summary><Flame size={13} aria-hidden="true"/><span className="table-modifier-kind">Challenge</span><strong>{challengeNames[id - 1]}</strong></summary>
+      <p>{challengeRules[id - 1]}</p>
+    </details>)}
+    {specialist && <details className="table-modifier table-modifier-specialist" open={specialist === 2 ? true : undefined}>
+      <summary><Shield size={13} aria-hidden="true"/><span className="table-modifier-kind">Specialist</span><strong>{specialistNames[specialist - 1]}</strong></summary>
+      <p>{specialist === 2 ? 'Once this heist, while ranking, one player can reveal their current hand ranking to the crew.' : specialistRules[specialist - 1]}</p>
+      {specialist === 2 && (use
+        ? <p className="table-modifier-result" role="status"><strong>{use.playerName}</strong> has <strong>{use.category}</strong> <span>(round {use.round})</span></p>
+        : canUseGetawayDriver
+          ? <button type="button" className="table-modifier-action" disabled={busy} onClick={onUseGetawayDriver}>Reveal my hand ranking</button>
+          : <p className="table-modifier-muted">Available during a ranking round.</p>)}
+    </details>}
+    {pendingChallenge && <details className="table-modifier table-modifier-challenge is-pending">
+      <summary><Flame size={13} aria-hidden="true"/><span className="table-modifier-kind">Next heist</span><strong>{challengeNames[pendingChallenge - 1]}</strong></summary>
+      <p>{challengeRules[pendingChallenge - 1]}</p>
+    </details>}
+    {pendingSpecialist && <details className="table-modifier table-modifier-specialist is-pending">
+      <summary><Shield size={13} aria-hidden="true"/><span className="table-modifier-kind">Next heist</span><strong>{specialistNames[pendingSpecialist - 1]}</strong></summary>
+      <p>{specialistRules[pendingSpecialist - 1]}</p>
+    </details>}
+  </div>
+}
+
 function TokenHistory({ room }: { room: GameFlowProps['room'] }) {
   const history = room.tokenHistory ?? room.players.flatMap((player) =>
     (player.tokenPicks ?? []).map((pick) => ({ ...pick, playerId: player.id })),
@@ -120,6 +156,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
   const revealNextHand = useMutation(api.rooms.revealNextHand)
   const submitChallengeGuess = useMutation(api.rooms.submitChallengeGuess)
   const startNextHeist = useMutation(api.rooms.startNextHeist)
+  const revealHandRanking = useMutation(api.rooms.revealHandRanking)
   const isHost = room.hostId === playerId
   const me = room.players.find((player) => player.id === playerId)
   const currentPick = me?.tokenPicks?.find((pick) => pick.round === room.round)
@@ -161,7 +198,9 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
     <p className="token-note">{currentPick ? `You chose token ${currentPick.value}. You can change it until everyone has ranked.` : 'Choose a token. You can take one from another player, who will need to choose again.'}</p>
   </div> : null
   const canRevealHand = room.phase === 'reveal' && nextPlayer?.id === playerId
-  const realTable = displayMode === 'real' ? <RealCasinoTable players={room.players} board={board} playerId={playerId} phase={room.phase} reveals={reveals} nextPlayerId={nextPlayer?.id} burningCard={burningCard} tokenPicker={tokenPicker} revealBusy={busy} onRevealHand={() => void run(() => revealNextHand({ code: room.code, playerId }))}/> : null
+  const tableModifiers = <TableModifiers room={room} busy={busy} onUseGetawayDriver={() => void run(() => revealHandRanking({ code: room.code, playerId }))}/>
+  const isReal = displayMode === 'real'
+  const realTable = isReal ? <RealCasinoTable players={room.players} board={board} playerId={playerId} phase={room.phase} reveals={reveals} nextPlayerId={nextPlayer?.id} burningCard={burningCard} tokenPicker={tokenPicker} modifiers={tableModifiers} revealBusy={busy} onRevealHand={() => void run(() => revealNextHand({ code: room.code, playerId }))}/> : null
   const completedChecks = room.completedChallengeChecks ?? []
   const currentChallengeCheck = (room.challengeChecks ?? []).find((id) => !completedChecks.includes(id))
 
@@ -203,18 +242,18 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
     const failed = room.outcome === 'failed'
     return <section className={`hand-panel game-flow-panel ${displayMode === 'real' ? 'real-mode' : 'text-mode'}`}>
       {viewModeToggle}
-      <ActiveChallengeFab cards={activeChallenges}/>
+      {!isReal && <ActiveChallengeFab cards={activeChallenges}/>}
       {realTable}
       <div className={`heist-result ${failed ? 'result-failed' : 'result-success'}`}>
         <span className="section-kicker">HEIST {failed ? 'FAILED' : 'CLEARED'}</span>
         <h2>{failed ? <>The alarm is <em>ringing.</em></> : <>Vault <em>opened.</em></>}</h2>
         <p>{failed ? `The hand order broke. ${room.alarms ?? 0} alarm${room.alarms === 1 ? '' : 's'} so far.` : 'Every hand rose higher than the one before it.'}</p>
         {room.status === 'finished' && <p className="game-over-note">The crew hit the alarm limit. This game is over.</p>}
-        <div className="modifier-draws">
+        {!isReal && <div className="modifier-draws">
           {room.pendingSpecialistCard && <div className="modifier-card specialist-card"><span><Shield size={15}/> RED SPECIALIST</span><strong>{specialistNames[room.pendingSpecialistCard - 1]}</strong><p>{specialistRules[room.pendingSpecialistCard - 1]}</p></div>}
           {room.pendingChallengeCard && <div className="modifier-card challenge-card"><span><Flame size={15}/> GREEN CHALLENGE</span><strong>{challengeNames[room.pendingChallengeCard - 1]}</strong><p>{challengeRules[room.pendingChallengeCard - 1]}</p></div>}
           {room.activeSpecialistCard && <div className="modifier-card specialist-card"><span><Shield size={15}/> ACTIVE SPECIALIST</span><strong>{specialistNames[room.activeSpecialistCard - 1]}</strong><p>{specialistRules[room.activeSpecialistCard - 1]}</p></div>}
-        </div>
+        </div>}
         {room.status === 'playing' ? <button className="button button-primary full-button next-heist-button" disabled={!isHost || busy} onClick={() => void run(() => startNextHeist({ code: room.code, playerId }))}>{busy ? <LoaderCircle className="spin" size={16}/> : <Sparkles size={16}/>} {isHost ? 'Deal the next heist' : 'Waiting for the host'} </button> : null}
       </div>
       <div className="reveal-history">
@@ -241,7 +280,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
     const categories = ['High card', 'One pair', 'Two pair', 'Three of a kind', 'Straight', 'Flush', 'Full house', 'Four of a kind', 'Straight flush']
     return <section className={`hand-panel game-flow-panel ${displayMode === 'real' ? 'real-mode' : 'text-mode'}`}>
       {viewModeToggle}
-      <ActiveChallengeFab cards={activeChallenges}/>
+      {!isReal && <ActiveChallengeFab cards={activeChallenges}/>}
       {realTable}
       <div className="hand-topline"><span><Eye size={15}/> Security check</span><span>{completedChecks.length + 1} / {(room.challengeChecks ?? []).length}</span></div>
       <div className="scanner-check">
@@ -269,7 +308,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
   if (room.phase === 'reveal') {
     return <section className={`hand-panel game-flow-panel ${displayMode === 'real' ? 'real-mode' : 'text-mode'}`}>
       {viewModeToggle}
-      <ActiveChallengeFab cards={activeChallenges}/>
+      {!isReal && <ActiveChallengeFab cards={activeChallenges}/>}
       {realTable}
       <div className="hand-topline"><span><Eye size={15}/> The showdown</span><span>Lowest token first</span></div>
       <div className="community-row" aria-label="Community cards">{board.map((card) => <Card value={card} small key={card}/>)}</div>
@@ -294,10 +333,11 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
 
   return <section className={`hand-panel game-flow-panel ${displayMode === 'real' ? 'real-mode' : 'text-mode'}`}>
     {viewModeToggle}
-    <ActiveChallengeFab cards={activeChallenges}/>
+    {!isReal && <ActiveChallengeFab cards={activeChallenges}/>}
     {realTable}
     <div className="hand-topline"><span><Sparkles size={15}/> Round {room.round} · {roundNames[room.round - 1] ?? 'Red'} tokens</span><span>{room.players.filter((player) => player.tokenPicks?.some((pick) => pick.round === room.round)).length} / {room.players.length} ranked</span></div>
-    {room.activeSpecialistCard && <div className="active-modifier-strip"><Shield size={14}/><span>Active Specialist:</span><span className="active-card-rule"><strong className="active-specialist-name">{specialistNames[room.activeSpecialistCard - 1]}</strong><small>{specialistRules[room.activeSpecialistCard - 1]}</small></span></div>}
+    {!isReal && room.activeSpecialistCard === 2 && tableModifiers}
+    {!isReal && room.activeSpecialistCard && room.activeSpecialistCard !== 2 && <div className="active-modifier-strip"><Shield size={14}/><span>Active Specialist:</span><span className="active-card-rule"><strong className="active-specialist-name">{specialistNames[room.activeSpecialistCard - 1]}</strong><small>{specialistRules[room.activeSpecialistCard - 1]}</small></span></div>}
     {stealNotice && dismissedStealNoticeAt !== stealNotice.createdAt && <div className="token-stolen-toast" role="alert" aria-live="assertive">
       <span><strong>Your token was stolen</strong>Token {stealNotice.value} was taken by {stealNotice.thiefName}. Choose another to stay in the round.</span>
       <button type="button" aria-label="Dismiss token stolen notification" onClick={() => setDismissedStealNoticeAt(stealNotice.createdAt)}>×</button>

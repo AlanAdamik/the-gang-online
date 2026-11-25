@@ -268,10 +268,28 @@ h1 em, h2 em { font-weight: 400; color: #9a7543; }
 .casino-player-token-right { top: 50%; right: -14px; transform: translateY(-50%); }
 .casino-player-token-bottom { bottom: -14px; left: 50%; transform: translateX(-50%); }
 .casino-player-token-left { top: 50%; left: -14px; transform: translateY(-50%); }
-.game-shell:fullscreen { box-sizing: border-box; width: 100vw; max-width: none; height: 100dvh; min-height: 100dvh; margin: 0; overflow-y: auto; overscroll-behavior: contain; background: var(--paper); }
-.game-shell:fullscreen .topbar-game { position: sticky; top: 0; z-index: 20; background: var(--paper); }
-.game-shell:fullscreen .room-page-active-game { width: 100%; max-width: none; }
-.game-shell:fullscreen .real-table-stage { flex: 0 0 auto; }
+.real-table-stage:fullscreen { box-sizing: border-box; width: 100vw; height: 100dvh; border: 0; border-radius: 0; justify-content: center; }
+.real-table-stage:fullscreen .casino-table-surface { flex: 1 1 auto; height: 100%; }
+.casino-table-modifiers { position: absolute; z-index: 5; top: 14px; left: 14px; max-width: min(300px, 42%); }
+.table-modifiers { display: flex; flex-direction: column; gap: 6px; }
+.table-modifier { border: 1px solid #d4bd8a80; border-radius: 8px; color: #f6e9c9; background: #10292ae6; box-shadow: 0 6px 18px #0000004d; font-size: 13px; line-height: 1.45; }
+.table-modifier-challenge { border-left: 0; }
+.table-modifier summary { display: flex; align-items: center; gap: 6px; padding: 6px 10px; cursor: pointer; list-style: none; }
+.table-modifier summary::-webkit-details-marker { display: none; }
+.table-modifier summary:focus-visible { outline: 2px solid #f0d597; outline-offset: 2px; border-radius: 8px; }
+.table-modifier-kind { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .75; }
+.table-modifier-challenge svg { color: #9fd9a6; }
+.table-modifier-specialist svg { color: #f0a08f; }
+.table-modifier.is-pending { opacity: .85; border-style: dashed; }
+.table-modifier p { margin: 0; padding: 0 10px 8px; color: #e1dfd1; }
+.table-modifier .table-modifier-result { color: #fff8e8; }
+.table-modifier .table-modifier-result span, .table-modifier .table-modifier-muted { opacity: .75; }
+.table-modifier-action { margin: 0 10px 10px; padding: 6px 12px; border: 1px solid #f0d597; border-radius: 999px; color: #10292a; background: #f0d597; font: inherit; font-weight: 700; cursor: pointer; }
+.table-modifier-action:disabled { opacity: .6; cursor: wait; }
+.table-modifier-action:focus-visible { outline: 2px solid #fff8e8; outline-offset: 2px; }
+.text-mode > .table-modifiers .table-modifier { color: var(--ink, inherit); background: transparent; box-shadow: none; }
+.text-mode > .table-modifiers .table-modifier p { color: inherit; }
+@media (max-width: 640px) { .casino-table-modifiers { max-width: 60%; top: 10px; left: 10px; } }
 .casino-pocket-cards-revealed .mini-hand-card { animation: card-reveal .72s cubic-bezier(.2,.75,.25,1) both; }
 .casino-pocket-cards-revealed .mini-hand-card:nth-child(2) { animation-delay: 100ms; }
 @keyframes card-reveal { 0% { opacity: 0; transform: translateY(-34px) rotate(-16deg) rotateX(75deg) scale(.72); } 68% { opacity: 1; transform: translateY(10px) rotate(4deg) rotateX(0) scale(1.06); } 100% { opacity: 1; transform: translateY(0) rotate(0) rotateX(0) scale(1); } }

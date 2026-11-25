@@ -46,6 +46,7 @@ const roomValidator = v.object({
   completedChallengeChecks: v.optional(v.array(v.number())),
   tokenStealNotice: v.optional(v.object({ targetPlayerId: v.string(), thiefName: v.string(), value: v.number(), createdAt: v.number() })),
   tokenHistory: v.optional(v.array(tokenHistoryValidator)),
+  specialistUse: v.optional(v.object({ card: v.number(), playerId: v.string(), playerName: v.string(), round: v.number(), category: v.string() })),
   gameLogId: v.optional(v.id('gameLogs')),
 })
 const gameLogEventType = v.union(
@@ -55,6 +56,7 @@ const gameLogEventType = v.union(
   v.literal('board_revealed'),
   v.literal('challenge_resolved'),
   v.literal('hand_revealed'),
+  v.literal('specialist_used'),
   v.literal('heist_outcome'),
   v.literal('game_finished'),
 )
@@ -180,6 +182,21 @@ function bestHand(cards: number[]) {
   return best
 }
 
+function currentHandCategory(cards: number[]) {
+  if (cards.length >= 5) return bestHand(cards).category
+  const counts = new Map<number, number>()
+  for (const card of cards) {
+    const rank = ((card - 1) % 13) + 1
+    counts.set(rank, (counts.get(rank) ?? 0) + 1)
+  }
+  const sizes = [...counts.values()].sort((a, b) => b - a)
+  if (sizes[0] === 4) return 'Four of a kind'
+  if (sizes[0] === 3) return 'Three of a kind'
+  if (sizes[0] === 2 && sizes[1] === 2) return 'Two pair'
+  if (sizes[0] === 2) return 'One pair'
+  return 'High card'
+}
+
 function handSize(room: { activeChallengeCards?: number[] }) {
   return room.activeChallengeCards?.includes(10) ? 3 : 2
 }
@@ -218,6 +235,7 @@ type GameLogEventType =
   | 'board_revealed'
   | 'challenge_resolved'
   | 'hand_revealed'
+  | 'specialist_used'
   | 'heist_outcome'
   | 'game_finished'
 
@@ -465,6 +483,7 @@ export const startGame = mutation({
       pendingSpecialistCard: undefined,
       challengeChecks: [],
       completedChallengeChecks: [],
+      specialistUse: undefined,
     })
     return null
   },
@@ -772,7 +791,25 @@ export const startNextHeist = mutation({
       pendingSpecialistCard: undefined,
       challengeChecks: [],
       completedChallengeChecks: [],
+      specialistUse: undefined,
     })
+    return null
+  },
+})
+
+export const revealHandRanking = mutation({
+  args: { code: v.string(), playerId: v.string() },
+  returns: v.null(),
+  handler: async (ctx, { code, playerId }) => {
+    const room = await getRoomByCode(ctx, code)
+    if (!room || room.status !== 'playing' || room.phase !== 'ranking') throw new Error('Specialists can only be used while the crew is ranking.')
+    if (room.activeSpecialistCard !== 2) throw new Error('The Getaway Driver is not active for this heist.')
+    if (room.specialistUse) throw new Error('The Getaway Driver has already been used this heist.')
+    const player = room.players.find((candidate) => candidate.id === playerId)
+    if (!player) throw new Error('You are not part of this crew.')
+    const category = currentHandCategory([...(player.cards ?? []), ...(room.communityCards ?? [])])
+    await ctx.db.patch(room._id, { specialistUse: { card: 2, playerId, playerName: player.name, round: room.round, category } })
+    await recordGameEvent(ctx, room.gameLogId, 'specialist_used', { round: room.round, playerId, playerName: player.name, specialistCard: 2, category })
     return null
   },
 })
