@@ -22,6 +22,7 @@ type RealCasinoTableProps = {
   burningCard: boolean
   tokenPicker?: ReactNode
   modifiers?: ReactNode
+  tableAction?: ReactNode
   revealBusy: boolean
   onRevealHand: () => void
 }
@@ -39,7 +40,7 @@ function CardBack() {
   return <div className="casino-card-back" aria-label="Face-down card"><span>✳</span></div>
 }
 
-export function RealCasinoTable({ players, board, playerId, phase, reveals, nextPlayerId, burningCard, tokenPicker, modifiers, revealBusy, onRevealHand }: RealCasinoTableProps) {
+export function RealCasinoTable({ players, board, playerId, phase, reveals, nextPlayerId, burningCard, tokenPicker, modifiers, tableAction, revealBusy, onRevealHand }: RealCasinoTableProps) {
   const stageRef = useRef<HTMLElement>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
@@ -124,6 +125,7 @@ export function RealCasinoTable({ players, board, playerId, phase, reveals, next
             </article>
           })}
         </div>}
+        {tableAction && <div className="casino-table-action">{tableAction}</div>}
         {burningCard && <div className="casino-burn-card" aria-hidden="true"><CardBack/></div>}
       </div>
       {tokenPicker && <div className="casino-table-token-picker">{tokenPicker}</div>}

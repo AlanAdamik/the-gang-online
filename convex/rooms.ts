@@ -162,11 +162,20 @@ function scoreFiveCards(cards: number[]) {
   const padded = [...tieBreak, 0, 0, 0, 0, 0].slice(0, 5)
   const score = category * 15 ** 5 + padded.reduce((value, rank) => value * 15 + rank, 0)
   const categories = ['High card', 'One pair', 'Two pair', 'Three of a kind', 'Straight', 'Flush', 'Full house', 'Four of a kind', 'Straight flush']
-  return { score, category: categories[category] }
+  const label = category === 0 ? highCardLabel(uniqueRanks) : categories[category]
+  return { score, category: categories[category], label }
+}
+
+function rankName(rank: number) {
+  return rank === 14 ? 'Ace' : rank === 13 ? 'King' : rank === 12 ? 'Queen' : rank === 11 ? 'Jack' : String(rank)
+}
+
+function highCardLabel(ranksHighToLow: number[]) {
+  return ranksHighToLow.length ? `High card (${rankName(ranksHighToLow[0])})` : 'High card'
 }
 
 function bestHand(cards: number[]) {
-  let best = { score: -1, category: 'High card' }
+  let best = { score: -1, category: 'High card', label: 'High card' }
   for (let a = 0; a < cards.length - 4; a += 1) {
     for (let b = a + 1; b < cards.length - 3; b += 1) {
       for (let c = b + 1; c < cards.length - 2; c += 1) {
@@ -183,18 +192,18 @@ function bestHand(cards: number[]) {
 }
 
 function currentHandCategory(cards: number[]) {
-  if (cards.length >= 5) return bestHand(cards).category
+  if (cards.length >= 5) return bestHand(cards).label
   const counts = new Map<number, number>()
   for (const card of cards) {
     const rank = ((card - 1) % 13) + 1
-    counts.set(rank, (counts.get(rank) ?? 0) + 1)
+    counts.set(rank === 1 ? 14 : rank, (counts.get(rank === 1 ? 14 : rank) ?? 0) + 1)
   }
   const sizes = [...counts.values()].sort((a, b) => b - a)
   if (sizes[0] === 4) return 'Four of a kind'
   if (sizes[0] === 3) return 'Three of a kind'
   if (sizes[0] === 2 && sizes[1] === 2) return 'Two pair'
   if (sizes[0] === 2) return 'One pair'
-  return 'High card'
+  return highCardLabel([...counts.keys()].sort((a, b) => b - a))
 }
 
 function handSize(room: { activeChallengeCards?: number[] }) {
@@ -675,14 +684,14 @@ export const revealNextHand = mutation({
     const player = room.players.find((entry: { id: string }) => entry.id === nextId)
     if (!player) throw new Error('This player is no longer at the table.')
     const hand = bestHand([...(player.cards ?? []), ...(room.communityCards ?? [])])
-    const reveal = { playerId: nextId, cards: [...(player.cards ?? []), ...(room.communityCards ?? [])], category: hand.category, score: hand.score }
+    const reveal = { playerId: nextId, cards: [...(player.cards ?? []), ...(room.communityCards ?? [])], category: hand.label, score: hand.score }
     const updatedReveals = [...reveals, reveal]
     await recordGameEvent(ctx, room.gameLogId, 'hand_revealed', {
       round: room.round,
       playerId: nextId,
       playerName: player.name,
       cards: reveal.cards,
-      category: hand.category,
+      category: hand.label,
     })
     const previous = reveals[reveals.length - 1]
     // Equal hands may be revealed in either order; only a strictly weaker hand trips the alarm.

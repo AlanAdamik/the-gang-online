@@ -200,7 +200,10 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
   const canRevealHand = room.phase === 'reveal' && nextPlayer?.id === playerId
   const tableModifiers = <TableModifiers room={room} busy={busy} onUseGetawayDriver={() => void run(() => revealHandRanking({ code: room.code, playerId }))}/>
   const isReal = displayMode === 'real'
-  const realTable = isReal ? <RealCasinoTable players={room.players} board={board} playerId={playerId} phase={room.phase} reveals={reveals} nextPlayerId={nextPlayer?.id} burningCard={burningCard} tokenPicker={tokenPicker} modifiers={tableModifiers} revealBusy={busy} onRevealHand={() => void run(() => revealNextHand({ code: room.code, playerId }))}/> : null
+  const nextHeistButton = room.phase === 'result' && room.status === 'playing'
+    ? <button className="button button-primary full-button next-heist-button" disabled={!isHost || busy} onClick={() => void run(() => startNextHeist({ code: room.code, playerId }))}>{busy ? <LoaderCircle className="spin" size={16}/> : <Sparkles size={16}/>} {isHost ? 'Deal the next heist' : 'Waiting for the host'} </button>
+    : null
+  const realTable = isReal ? <RealCasinoTable players={room.players} board={board} playerId={playerId} phase={room.phase} reveals={reveals} nextPlayerId={nextPlayer?.id} burningCard={burningCard} tokenPicker={tokenPicker} modifiers={tableModifiers} tableAction={nextHeistButton} revealBusy={busy} onRevealHand={() => void run(() => revealNextHand({ code: room.code, playerId }))}/> : null
   const completedChecks = room.completedChallengeChecks ?? []
   const currentChallengeCheck = (room.challengeChecks ?? []).find((id) => !completedChecks.includes(id))
 
@@ -254,7 +257,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
           {room.pendingChallengeCard && <div className="modifier-card challenge-card"><span><Flame size={15}/> GREEN CHALLENGE</span><strong>{challengeNames[room.pendingChallengeCard - 1]}</strong><p>{challengeRules[room.pendingChallengeCard - 1]}</p></div>}
           {room.activeSpecialistCard && <div className="modifier-card specialist-card"><span><Shield size={15}/> ACTIVE SPECIALIST</span><strong>{specialistNames[room.activeSpecialistCard - 1]}</strong><p>{specialistRules[room.activeSpecialistCard - 1]}</p></div>}
         </div>}
-        {room.status === 'playing' ? <button className="button button-primary full-button next-heist-button" disabled={!isHost || busy} onClick={() => void run(() => startNextHeist({ code: room.code, playerId }))}>{busy ? <LoaderCircle className="spin" size={16}/> : <Sparkles size={16}/>} {isHost ? 'Deal the next heist' : 'Waiting for the host'} </button> : null}
+        {!isReal && nextHeistButton}
       </div>
       <div className="reveal-history">
         <div className="hand-topline"><span><Eye size={15}/> Revealed hands</span><span>{reveals.length} / {room.players.length}</span></div>

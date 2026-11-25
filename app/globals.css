@@ -506,3 +506,6 @@ button.game-log-event { cursor: pointer; }
   .replay-player, .replay-timeline { padding: 12px; }
   .replay-footer { flex-direction: column; }
 }
+
+.casino-table-action { width: min(100%, 320px); display: flex; justify-content: center; }
+.casino-table-action .next-heist-button { margin-top: 0; box-shadow: 0 6px 18px #0000004d; }
