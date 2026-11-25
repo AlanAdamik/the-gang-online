@@ -57,6 +57,7 @@ const gameLogEventType = v.union(
   v.literal('challenge_resolved'),
   v.literal('hand_revealed'),
   v.literal('specialist_used'),
+  v.literal('modifier_triggered'),
   v.literal('heist_outcome'),
   v.literal('game_finished'),
 )
@@ -77,6 +78,7 @@ const gameLogEventDetailsValidator = v.object({
   correct: v.optional(v.boolean()),
   outcome: v.optional(v.union(v.literal('success'), v.literal('failed'))),
   alarms: v.optional(v.number()),
+  note: v.optional(v.string()),
 })
 const gameLogEventValidator = v.object({
   _id: v.id('gameLogEvents'),
@@ -235,6 +237,7 @@ type GameLogEventDetails = {
   correct?: boolean
   outcome?: 'success' | 'failed'
   alarms?: number
+  note?: string
 }
 
 type GameLogEventType =
@@ -245,6 +248,7 @@ type GameLogEventType =
   | 'challenge_resolved'
   | 'hand_revealed'
   | 'specialist_used'
+  | 'modifier_triggered'
   | 'heist_outcome'
   | 'game_finished'
 
@@ -261,6 +265,25 @@ async function recordGameEvent(
   const cleanDetails = Object.fromEntries(Object.entries(details).filter(([, value]) => value !== undefined)) as GameLogEventDetails
   await ctx.db.insert('gameLogEvents', { gameLogId, sequence, type, createdAt: Date.now(), details: cleanDetails })
   await ctx.db.patch(gameLogId, { eventCount: sequence })
+}
+
+async function recordModifier(
+  ctx: MutationCtx,
+  gameLogId: Id<'gameLogs'> | undefined,
+  challengeCard: number,
+  note: string,
+  details: GameLogEventDetails = {},
+) {
+  await recordGameEvent(ctx, gameLogId, 'modifier_triggered', { ...details, challengeCard, note })
+}
+
+async function recordHeistSetupModifiers(
+  ctx: MutationCtx,
+  gameLogId: Id<'gameLogs'> | undefined,
+  activeChallengeCards: number[],
+) {
+  if (activeChallengeCards.includes(10)) await recordModifier(ctx, gameLogId, 10, 'every thief was dealt 3 private cards', { round: 1 })
+  if (activeChallengeCards.includes(1)) await recordModifier(ctx, gameLogId, 1, 'the flop was dealt before the first ranking', { round: 1 })
 }
 
 async function recordHeistOutcome(
@@ -468,6 +491,7 @@ export const startGame = mutation({
       eventCount: 0,
     })
     await recordGameEvent(ctx, gameLogId, 'game_started', { mode, activeChallengeCards, round: 1 })
+    await recordHeistSetupModifiers(ctx, gameLogId, activeChallengeCards)
     if (communityCards.length) await recordGameEvent(ctx, gameLogId, 'board_revealed', { round: 1, cards: communityCards })
     await ctx.db.patch(room._id, {
       players: dealtPlayers,
@@ -536,6 +560,9 @@ export const pickToken = mutation({
         previousValue: currentPick?.value,
         displacedPlayerName: previousOwner?.name,
       })
+      if (value === lockedValue) {
+        await recordModifier(ctx, room.gameLogId, active.includes(2) ? 2 : 6, `${player.name}'s ${value} token is locked for this round`, { round: room.round, playerId, playerName: player.name, value })
+      }
     }
     if (!players.every((item: any) => item.tokenPicks.some((pick: any) => pick.round === room.round))) {
       await ctx.db.patch(room._id, { players, tokenStealNotice, tokenHistory })
@@ -546,6 +573,7 @@ export const pickToken = mutation({
     let communityCards = room.communityCards ?? []
     let round = room.round
     const activeChallengeCards = room.activeChallengeCards ?? []
+    const roundModifiers: { card: number; note: string; details?: GameLogEventDetails }[] = []
     const addCommunity = (count: number) => {
       const draw = drawBoardCards(deck, count, communityCards)
       deck = draw.deck
@@ -566,6 +594,11 @@ export const pickToken = mutation({
           const replacement = drawPrivateCards(deck, target.cards.length)
           deck = replacement.deck
           target.cards = replacement.cards.sort((a: number, b: number) => a - b)
+          roundModifiers.push({
+            card: redrawLowest ? 3 : 7,
+            note: `${redrawLowest ? 'the flop has a face card' : 'the flop has no face card'}, so ${target.name} (token ${targetValue}) drew a new hand`,
+            details: { playerId: target.id, playerName: target.name, value: targetValue },
+          })
         }
       }
       round = 2
@@ -573,6 +606,7 @@ export const pickToken = mutation({
       addCommunity(1)
       if (activeChallengeCards.includes(5)) {
         addCommunity(1)
+        roundModifiers.push({ card: 5, note: 'the turn and river were dealt together, skipping a ranking round' })
         round = 4
       } else round = 3
     } else if (round === 3) {
@@ -599,9 +633,11 @@ export const pickToken = mutation({
 
     const addedBoardCards = communityCards.slice((room.communityCards ?? []).length)
     if (addedBoardCards.length) await recordGameEvent(ctx, room.gameLogId, 'board_revealed', { round: room.round, cards: addedBoardCards })
+    for (const modifier of roundModifiers) await recordModifier(ctx, room.gameLogId, modifier.card, modifier.note, { round: room.round, ...modifier.details })
     if (activeChallengeCards.includes(8)) {
       const previousRound = activeChallengeCards.includes(5) && room.round === 2 ? 2 : round - 1
       for (const item of players as any[]) item.tokenPicks = item.tokenPicks.filter((pick: any) => pick.round !== previousRound)
+      await recordModifier(ctx, room.gameLogId, 8, `round ${previousRound} tokens were hidden from the table`, { round })
     }
     await ctx.db.patch(room._id, { players, round, phase: 'ranking', deck, communityCards, tokenStealNotice, tokenHistory })
     return null
@@ -744,6 +780,7 @@ export const startNextHeist = mutation({
     if (room.status !== 'playing' || room.phase !== 'result') throw new Error('The current heist is not ready to restart.')
     let activeChallengeCards = room.activeChallengeCards ?? []
     let activeSpecialistCard: number | undefined
+    let replacedChallenge: { removed: number; added: number } | undefined
     const mode = room.mode ?? 'advanced'
     if (mode === 'professional') {
       activeChallengeCards = room.permanentChallengeCard === undefined ? [] : [room.permanentChallengeCard]
@@ -754,6 +791,7 @@ export const startNextHeist = mutation({
       if (drawn !== undefined) {
         const lowest = Math.min(...activeChallengeCards)
         activeChallengeCards = [...activeChallengeCards.filter((id) => id !== lowest), drawn]
+        replacedChallenge = { removed: lowest, added: drawn }
       }
     } else if (room.outcome === 'success') {
       activeChallengeCards = room.pendingChallengeCard === undefined ? [] : [room.pendingChallengeCard]
@@ -782,6 +820,10 @@ export const startNextHeist = mutation({
       activeChallengeCards,
       specialistCard: activeSpecialistCard,
     })
+    if (replacedChallenge) {
+      await recordModifier(ctx, room.gameLogId, replacedChallenge.added, `the alarm brought it in, replacing ${challengeNames[replacedChallenge.removed - 1]}`, { round: 1 })
+    }
+    await recordHeistSetupModifiers(ctx, room.gameLogId, activeChallengeCards)
     if (communityCards.length) await recordGameEvent(ctx, room.gameLogId, 'board_revealed', { round: 1, cards: communityCards })
     await ctx.db.patch(room._id, {
       status: 'playing',

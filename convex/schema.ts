@@ -51,6 +51,7 @@ const gameLogEventDetails = v.object({
   correct: v.optional(v.boolean()),
   outcome: v.optional(v.union(v.literal('success'), v.literal('failed'))),
   alarms: v.optional(v.number()),
+  note: v.optional(v.string()),
 })
 
 export default defineSchema({
@@ -78,6 +79,7 @@ export default defineSchema({
       v.literal('challenge_resolved'),
       v.literal('hand_revealed'),
       v.literal('specialist_used'),
+      v.literal('modifier_triggered'),
       v.literal('heist_outcome'),
       v.literal('game_finished'),
     ),

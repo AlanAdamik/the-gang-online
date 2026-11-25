@@ -9,7 +9,7 @@ import { Card } from './playing-card'
 type GameLogEvent = {
   _id: string
   sequence: number
-  type: 'game_started' | 'heist_started' | 'token_picked' | 'board_revealed' | 'challenge_resolved' | 'hand_revealed' | 'specialist_used' | 'heist_outcome' | 'game_finished'
+  type: 'game_started' | 'heist_started' | 'token_picked' | 'board_revealed' | 'challenge_resolved' | 'hand_revealed' | 'specialist_used' | 'modifier_triggered' | 'heist_outcome' | 'game_finished'
   createdAt: number
   details: {
     round?: number
@@ -28,6 +28,7 @@ type GameLogEvent = {
     correct?: boolean
     outcome?: 'success' | 'failed'
     alarms?: number
+    note?: string
   }
 }
 
@@ -50,7 +51,9 @@ function eventTitle(event: GameLogEvent) {
     case 'hand_revealed':
       return `${details.playerName ?? 'A player'} revealed ${details.category ?? 'their hand'}`
     case 'specialist_used':
-      return `${specialistNames[(details.specialistCard ?? 2) - 1]} · ${details.playerName ?? 'A player'} has ${details.category ?? 'a hand'}`
+      return `${specialistNames[(details.specialistCard ?? 2) - 1]} used by ${details.playerName ?? 'a player'} · they have ${details.category ?? 'a hand'}`
+    case 'modifier_triggered':
+      return `${details.specialistCard ? specialistNames[details.specialistCard - 1] : challengeNames[(details.challengeCard ?? 1) - 1]} triggered · ${details.note ?? 'its effect applied'}`
     case 'heist_outcome':
       return `Heist ${details.round ?? ''} ${details.outcome === 'success' ? 'cleared' : 'failed'}${details.alarms ? ` · ${details.alarms} alarm${details.alarms === 1 ? '' : 's'}` : ''}`
     case 'game_finished':
