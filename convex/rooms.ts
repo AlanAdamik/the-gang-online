@@ -666,7 +666,7 @@ export const revealNextHand = mutation({
       category: hand.category,
     })
     const previous = reveals[reveals.length - 1]
-    if (previous && hand.score <= previous.score) {
+    if (previous && hand.score < previous.score) {
       const alarms = (room.alarms ?? 0) + 1
       const limit = room.mode === 'master-thief' ? 2 : 3
       const challengeDraw = room.mode === 'master-thief' ? drawChallengeCard(room.challengeDeck, 'master-thief', room.activeChallengeCards ?? []) : null
