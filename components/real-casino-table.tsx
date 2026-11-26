@@ -2,7 +2,19 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Maximize, Minimize } from 'lucide-react'
+import { HelpCircle, Maximize, Minimize, X } from 'lucide-react'
+
+const handRankings: [string, string][] = [
+  ['Straight flush', '5 in a row, same suit'],
+  ['Four of a kind', '4 cards of one rank'],
+  ['Full house', '3 of a kind + a pair'],
+  ['Flush', '5 cards, same suit'],
+  ['Straight', '5 in a row'],
+  ['Three of a kind', '3 cards of one rank'],
+  ['Two pair', '2 different pairs'],
+  ['One pair', '2 cards of one rank'],
+  ['High card', 'Highest single card'],
+]
 import { Card } from './playing-card'
 
 type CasinoPlayer = {
@@ -43,6 +55,14 @@ function CardBack() {
 export function RealCasinoTable({ players, board, playerId, phase, reveals, nextPlayerId, burningCard, tokenPicker, modifiers, tableAction, revealBusy, onRevealHand }: RealCasinoTableProps) {
   const stageRef = useRef<HTMLElement>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [showRankings, setShowRankings] = useState(false)
+
+  useEffect(() => {
+    if (!showRankings) return
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setShowRankings(false) }
+    document.addEventListener('keydown', closeOnEscape)
+    return () => document.removeEventListener('keydown', closeOnEscape)
+  }, [showRankings])
 
   useEffect(() => {
     const syncFullscreen = () => setIsFullscreen(document.fullscreenElement === stageRef.current)
@@ -63,6 +83,19 @@ export function RealCasinoTable({ players, board, playerId, phase, reveals, next
     <button type="button" className="table-fullscreen-button" onClick={() => void toggleFullscreen()} aria-label={isFullscreen ? 'Exit full screen' : 'Enter full screen'} title={isFullscreen ? 'Exit full screen' : 'Enter full screen'}>
       {isFullscreen ? <Minimize size={17}/> : <Maximize size={17}/>}
     </button>
+    <button type="button" className="table-fullscreen-button table-help-button" onClick={() => setShowRankings((open) => !open)} aria-expanded={showRankings} aria-controls="hand-rankings-panel" aria-label="Show hand rankings" title="Hand rankings">
+      <HelpCircle size={18}/>
+    </button>
+    {showRankings && <div id="hand-rankings-panel" className="hand-rankings-panel" role="dialog" aria-label="Hand rankings">
+      <div className="hand-rankings-header">
+        <strong>Hand rankings</strong>
+        <button type="button" onClick={() => setShowRankings(false)} aria-label="Close hand rankings"><X size={14}/></button>
+      </div>
+      <ol>
+        {handRankings.map(([name, example]) => <li key={name}><span>{name}</span><small>{example}</small></li>)}
+      </ol>
+      <p>Strongest at the top. Ties are broken by card values (kickers); equal hands can be in either order.</p>
+    </div>}
     <div className={`casino-table-surface ${tokenPicker ? 'casino-table-surface-picking' : ''}`}>
       <div className="casino-table-felt" aria-hidden="true" />
       {opponents.map((player, index) => {
