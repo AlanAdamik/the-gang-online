@@ -7,6 +7,8 @@ import { Card } from './playing-card'
 import { RealCasinoTable } from './real-casino-table'
 import { GameLogPanel } from './game-log'
 import { ShowdownHands } from './showdown-hands'
+import { CardThemeToggle } from './card-theme'
+import { HeistScore } from './heist-score'
 import { Check, Eye, Flame, LoaderCircle, RotateCcw, Shield, Sparkles } from 'lucide-react'
 
 type GameFlowProps = {
@@ -123,6 +125,13 @@ function TableModifiers({ room, busy, onUseGetawayDriver }: { room: GameFlowProp
   </div>
 }
 
+export function lockedTokenForRound(room: Pick<GameFlowProps['room'], 'activeChallengeCards' | 'players'>, round: number) {
+  if (round > 3) return null
+  if (room.activeChallengeCards?.includes(2)) return 1
+  if (room.activeChallengeCards?.includes(6)) return room.players.length
+  return null
+}
+
 function TokenHistory({ room }: { room: GameFlowProps['room'] }) {
   const history = room.tokenHistory ?? room.players.flatMap((player) =>
     (player.tokenPicks ?? []).map((pick) => ({ ...pick, playerId: player.id })),
@@ -137,7 +146,8 @@ function TokenHistory({ room }: { room: GameFlowProps['room'] }) {
         <th scope="row">{player.name}</th>
         {[1, 2, 3, 4].map((round) => {
           const pick = history.find((entry) => entry.round === round && entry.playerId === player.id)
-          return <td key={round}>{pick ? <span className="token-history-token">{pick.value}</span> : <span className="token-history-empty" aria-label="Aucun jeton choisi">—</span>}</td>
+          const locked = pick && pick.value === lockedTokenForRound(room, round)
+          return <td key={round}>{pick ? <span className={`token-history-token ${locked ? 'is-locked' : ''}`} title={locked ? 'Jeton verrouillé' : undefined}>{pick.value}</span> : <span className="token-history-empty" aria-label="Aucun jeton choisi">—</span>}</td>
         })}
       </tr>)}</tbody>
     </table>
@@ -152,6 +162,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
   const [error, setError] = useState('')
   const [guess, setGuess] = useState('')
   const [dismissedStealNoticeAt, setDismissedStealNoticeAt] = useState<number | null>(null)
+  const [ownSteal, setOwnSteal] = useState<{ value: number; victimName: string; at: number } | null>(null)
   const chooseMode = useMutation(api.rooms.chooseMode)
   const pickToken = useMutation(api.rooms.pickToken)
   const revealNextHand = useMutation(api.rooms.revealNextHand)
@@ -165,7 +176,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
   const availableTokens = Array.from({ length: room.players.length }, (_, index) => index + 1)
   const takenTokens = room.players.flatMap((player) => player.id === playerId ? [] : (player.tokenPicks ?? []).filter((pick) => pick.round === room.round).map((pick) => pick.value))
   const stealNotice = room.tokenStealNotice?.targetPlayerId === playerId ? room.tokenStealNotice : undefined
-  const lockedToken = room.activeChallengeCards?.includes(2) && room.round <= 3 ? 1 : room.activeChallengeCards?.includes(6) && room.round <= 3 ? room.players.length : null
+  const lockedToken = lockedTokenForRound(room, room.round)
   const revealOrder = room.revealOrder ?? []
   const reveals = room.reveals ?? []
   const nextPlayer = room.players.find((player) => player.id === revealOrder[reveals.length])
@@ -181,11 +192,40 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
     return () => window.clearTimeout(timeout)
   }, [board.length])
 
-  const viewModeToggle = <div className="game-view-toggle" role="group" aria-label="Choisir l’affichage de la partie">
-    <span>AFFICHAGE</span>
-    <button type="button" aria-pressed={displayMode === 'text'} onClick={() => setDisplayMode('text')}>Texte</button>
-    <button type="button" aria-pressed={displayMode === 'real'} onClick={() => setDisplayMode('real')}>Table réelle</button>
+  useEffect(() => {
+    if (!ownSteal) return
+    const timeout = window.setTimeout(() => setOwnSteal(null), 4500)
+    return () => window.clearTimeout(timeout)
+  }, [ownSteal])
+
+  const viewModeToggle = <div className="game-toggle-row">
+    <div className="game-view-toggle" role="group" aria-label="Choisir l’affichage de la partie">
+      <span>AFFICHAGE</span>
+      <button type="button" aria-pressed={displayMode === 'text'} onClick={() => setDisplayMode('text')}>Texte</button>
+      <button type="button" aria-pressed={displayMode === 'real'} onClick={() => setDisplayMode('real')}>Table réelle</button>
+    </div>
+    <CardThemeToggle/>
   </div>
+  const showStealNotice = room.phase === 'ranking' && stealNotice && dismissedStealNoticeAt !== stealNotice.createdAt
+  const tokenToasts = <>
+    {showStealNotice && <div className="token-stolen-toast" role="alert" aria-live="assertive">
+      <span><strong>Votre jeton a été volé</strong>Le jeton {stealNotice.value} a été pris par {stealNotice.thiefName}. Choisissez-en un autre pour rester dans la manche.</span>
+      <button type="button" aria-label="Fermer la notification de jeton volé" onClick={() => setDismissedStealNoticeAt(stealNotice.createdAt)}>×</button>
+    </div>}
+    {ownSteal && <div className={`token-stolen-toast token-steal-success-toast ${showStealNotice ? 'is-stacked' : ''}`} role="status" aria-live="polite">
+      <span><strong>Jeton volé</strong>Vous avez pris le jeton {ownSteal.value} à {ownSteal.victimName}. Il ou elle doit en choisir un autre.</span>
+      <button type="button" aria-label="Fermer la notification" onClick={() => setOwnSteal(null)}>×</button>
+    </div>}
+  </>
+  function chooseToken(value: number) {
+    const victim = room.players.find((player) => player.id !== playerId && player.tokenPicks?.some((pick) => pick.round === room.round && pick.value === value))
+    void run(async () => {
+      await pickToken({ code: room.code, playerId, value })
+      if (victim) setOwnSteal({ value, victimName: victim.name, at: Date.now() })
+    })
+  }
+  const alarmLimit = room.mode === 'master-thief' ? 2 : 3
+  const heistScore = (variant: 'table' | 'panel') => <HeistScore code={room.code} playerId={playerId} round={room.round} phase={room.phase} alarms={room.alarms ?? 0} alarmLimit={alarmLimit} variant={variant}/>
   const colorName = roundColors[room.round - 1] ?? 'red'
   const tokenPicker = room.phase === 'ranking' ? <div className={`token-picker token-picker-${colorName}`}>
     <div className="token-picker-heading"><strong>Où vous situez-vous ?</strong><span>1 = le plus faible · {room.players.length} = le plus fort</span></div>
@@ -193,8 +233,9 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
       const taken = takenTokens.includes(value)
       const locked = (value === lockedToken && taken) || (currentPick?.value === lockedToken && currentPick.value !== value)
       const selected = currentPick?.value === value
-      return <button key={value} className={`rank-token ${selected ? 'is-selected' : ''} ${taken ? 'is-taken' : ''}`} aria-pressed={selected} disabled={busy || locked} onClick={() => void run(() => pickToken({ code: room.code, playerId, value }))}>
-        {selected ? <Check size={14}/> : value}<span>{selected ? 'Votre choix' : taken ? 'Voler' : value === 1 ? 'Plus faible' : value === room.players.length ? 'Plus fort' : 'Rang'}</span>
+      const isLockedToken = value === lockedToken && (taken || selected)
+      return <button key={value} className={`rank-token ${selected ? 'is-selected' : ''} ${taken ? 'is-taken' : ''} ${isLockedToken ? 'is-locked' : ''}`} aria-pressed={selected} disabled={busy || locked} onClick={() => chooseToken(value)}>
+        {selected ? <Check size={14}/> : value}<span>{isLockedToken ? 'Verrouillé' : selected ? 'Votre choix' : taken ? 'Voler' : value === 1 ? 'Plus faible' : value === room.players.length ? 'Plus fort' : 'Rang'}</span>
       </button>
     })}</div>
     <p className="token-note">{currentPick ? `Vous avez choisi le jeton ${currentPick.value}. Vous pouvez changer tant que tout le monde n’a pas classé.` : 'Choisissez un jeton. Vous pouvez en prendre un à un autre joueur, qui devra alors en choisir un nouveau.'}</p>
@@ -208,7 +249,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
   const restartButton = room.status === 'finished'
     ? <button className="button button-primary full-button next-heist-button" disabled={!isHost || busy} onClick={() => void run(() => restartGame({ code: room.code, playerId }))}>{busy ? <LoaderCircle className="spin" size={16}/> : <RotateCcw size={16}/>} {isHost ? 'Nouvelle partie' : 'En attente de l’hôte pour rejouer'}</button>
     : null
-  const realTable = isReal ? <RealCasinoTable players={room.players} board={board} playerId={playerId} phase={room.phase} reveals={reveals} outcome={room.outcome} gameOver={room.status === 'finished'} nextPlayerId={nextPlayer?.id} burningCard={burningCard} tokenPicker={tokenPicker} modifiers={tableModifiers} tableAction={nextHeistButton ?? restartButton} revealBusy={busy} onRevealHand={() => void run(() => revealNextHand({ code: room.code, playerId }))}/> : null
+  const realTable = isReal ? <RealCasinoTable notices={tokenToasts} scoreboard={heistScore('table')} lockedTokenForRound={(round) => lockedTokenForRound(room, round)} players={room.players} board={board} playerId={playerId} phase={room.phase} reveals={reveals} outcome={room.outcome} gameOver={room.status === 'finished'} nextPlayerId={nextPlayer?.id} burningCard={burningCard} tokenPicker={tokenPicker} modifiers={tableModifiers} tableAction={nextHeistButton ?? restartButton} revealBusy={busy} onRevealHand={() => void run(() => revealNextHand({ code: room.code, playerId }))}/> : null
   const completedChecks = room.completedChallengeChecks ?? []
   const currentChallengeCheck = (room.challengeChecks ?? []).find((id) => !completedChecks.includes(id))
 
@@ -251,6 +292,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
     return <section className={`hand-panel game-flow-panel ${displayMode === 'real' ? 'real-mode' : 'text-mode'}`}>
       {viewModeToggle}
       {!isReal && <ActiveChallengeFab cards={activeChallenges}/>}
+      {!isReal && heistScore('panel')}
       {realTable}
       <div className={`heist-result ${failed ? 'result-failed' : 'result-success'}`}>
         <span className="section-kicker">{failed ? 'CASSE RATÉ' : 'CASSE RÉUSSI'}</span>
@@ -282,6 +324,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
     return <section className={`hand-panel game-flow-panel ${displayMode === 'real' ? 'real-mode' : 'text-mode'}`}>
       {viewModeToggle}
       {!isReal && <ActiveChallengeFab cards={activeChallenges}/>}
+      {!isReal && heistScore('panel')}
       {realTable}
       <div className="hand-topline"><span><Eye size={15}/> Contrôle de sécurité</span><span>{completedChecks.length + 1} / {(room.challengeChecks ?? []).length}</span></div>
       <div className="scanner-check">
@@ -310,6 +353,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
     return <section className={`hand-panel game-flow-panel ${displayMode === 'real' ? 'real-mode' : 'text-mode'}`}>
       {viewModeToggle}
       {!isReal && <ActiveChallengeFab cards={activeChallenges}/>}
+      {!isReal && heistScore('panel')}
       {realTable}
       <div className="hand-topline"><span><Eye size={15}/> L’abattage</span><span>Du plus petit jeton au plus grand</span></div>
       <div className="community-row" aria-label="Cartes communes">{board.map((card) => <Card value={card} small key={card}/>)}</div>
@@ -328,14 +372,12 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
   return <section className={`hand-panel game-flow-panel ${displayMode === 'real' ? 'real-mode' : 'text-mode'}`}>
     {viewModeToggle}
     {!isReal && <ActiveChallengeFab cards={activeChallenges}/>}
+      {!isReal && heistScore('panel')}
     {realTable}
     <div className="hand-topline"><span><Sparkles size={15}/> Manche {room.round} · jetons {roundNames[room.round - 1] ?? 'rouges'}</span><span>{room.players.filter((player) => player.tokenPicks?.some((pick) => pick.round === room.round)).length} / {room.players.length} classés</span></div>
     {!isReal && room.activeSpecialistCard === 2 && tableModifiers}
     {!isReal && room.activeSpecialistCard && room.activeSpecialistCard !== 2 && <div className="active-modifier-strip"><Shield size={14}/><span>Spécialiste actif :</span><span className="active-card-rule"><strong className="active-specialist-name">{specialistNames[room.activeSpecialistCard - 1]}</strong><small>{specialistRules[room.activeSpecialistCard - 1]}</small></span></div>}
-    {stealNotice && dismissedStealNoticeAt !== stealNotice.createdAt && <div className="token-stolen-toast" role="alert" aria-live="assertive">
-      <span><strong>Votre jeton a été volé</strong>Le jeton {stealNotice.value} a été pris par {stealNotice.thiefName}. Choisissez-en un autre pour rester dans la manche.</span>
-      <button type="button" aria-label="Fermer la notification de jeton volé" onClick={() => setDismissedStealNoticeAt(stealNotice.createdAt)}>×</button>
-    </div>}
+    {!isReal && tokenToasts}
     <p className="round-guidance">{stageMessage}</p>
     <div className="game-table-row">
       {me?.cards.length ? <div className="private-hand"><span>VOS CARTES PRIVÉES <small>gardez-les pour vous</small></span><div>{me.cards.map((card) => <Card value={card} key={card}/>)}</div></div> : <div className="private-hand private-hand-empty"><span>VOS CARTES PRIVÉES</span><span>Les cartes sont distribuées au début du casse.</span></div>}
