@@ -7,7 +7,7 @@ export function Card({ value, small = false }: { value: number; small?: boolean 
   const suit = suits[Math.floor(normalized / 13)]
   const red = normalized >= 13 && normalized < 26 || normalized >= 39
 
-  return <div className={`hand-card ${small ? 'mini-hand-card' : ''} ${red ? 'red-card' : ''}`} role="img" aria-label={`${rank} of ${suit}`}>
+  return <div className={`hand-card ${small ? 'mini-hand-card' : ''} ${red ? 'red-card' : ''}`} role="img" aria-label={`${rank} de ${suit}`}>
     <span className="card-corner">{rank}<small>{suit}</small></span>
     <span className="card-suit">{suit}</span>
     <span className="card-corner card-corner-bottom">{rank}<small>{suit}</small></span>

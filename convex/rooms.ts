@@ -91,12 +91,12 @@ const gameLogEventValidator = v.object({
 })
 
 const challengeNames = [
-  'Quick Access', 'Noise Sensors', 'Motion Detector', 'Retina Scan', 'Hasty Getaway',
-  'Ventilation Shaft', 'Laser Tripwires', 'Blackout', 'Fingerprint Scan', 'Security Cameras',
+  'Accès rapide', 'Capteurs sonores', 'Détecteur de mouvement', 'Scanner rétinien', 'Fuite précipitée',
+  'Conduit d’aération', 'Rayons laser', 'Panne de courant', 'Scanner d’empreintes', 'Caméras de surveillance',
 ]
 const specialistNames = [
-  'Informant', 'Getaway Driver', 'Investor', 'Mastermind', 'Hacker',
-  'Coordinator', 'Jack', 'Math Whiz', 'Con Artist', 'Muscle',
+  'Informateur', 'Chauffeur', 'Investisseur', 'Cerveau', 'Hacker',
+  'Coordinateur', 'Valet', 'Matheux', 'Escroc', 'Gros bras',
 ]
 
 function makeCode() {
@@ -163,21 +163,21 @@ function scoreFiveCards(cards: number[]) {
   else if (groups[0][1] === 2) { category = 1; tieBreak = [groups[0][0], ...groups.slice(1).map(([rank]) => rank).sort((a, b) => b - a)] }
   const padded = [...tieBreak, 0, 0, 0, 0, 0].slice(0, 5)
   const score = category * 15 ** 5 + padded.reduce((value, rank) => value * 15 + rank, 0)
-  const categories = ['High card', 'One pair', 'Two pair', 'Three of a kind', 'Straight', 'Flush', 'Full house', 'Four of a kind', 'Straight flush']
+  const categories = ['Carte haute', 'Paire', 'Double paire', 'Brelan', 'Quinte', 'Couleur', 'Full', 'Carré', 'Quinte flush']
   const label = category === 0 ? highCardLabel(uniqueRanks) : categories[category]
   return { score, category: categories[category], label }
 }
 
 function rankName(rank: number) {
-  return rank === 14 ? 'Ace' : rank === 13 ? 'King' : rank === 12 ? 'Queen' : rank === 11 ? 'Jack' : String(rank)
+  return rank === 14 ? 'As' : rank === 13 ? 'Roi' : rank === 12 ? 'Dame' : rank === 11 ? 'Valet' : String(rank)
 }
 
 function highCardLabel(ranksHighToLow: number[]) {
-  return ranksHighToLow.length ? `High card (${rankName(ranksHighToLow[0])})` : 'High card'
+  return ranksHighToLow.length ? `Carte haute (${rankName(ranksHighToLow[0])})` : 'Carte haute'
 }
 
 function bestHand(cards: number[]) {
-  let best = { score: -1, category: 'High card', label: 'High card' }
+  let best = { score: -1, category: 'Carte haute', label: 'Carte haute' }
   for (let a = 0; a < cards.length - 4; a += 1) {
     for (let b = a + 1; b < cards.length - 3; b += 1) {
       for (let c = b + 1; c < cards.length - 2; c += 1) {
@@ -202,11 +202,11 @@ function currentHandCategory(cards: number[]) {
     counts.set(rank === 1 ? 14 : rank, (counts.get(rank === 1 ? 14 : rank) ?? 0) + 1)
   }
   const sizes = [...counts.values()].sort((a, b) => b - a)
-  if (sizes[0] === 4) return 'Four of a kind'
-  if (sizes[0] === 3) return 'Three of a kind'
-  if (sizes[0] === 2 && sizes[1] === 2) return 'Two pair'
-  if (sizes[0] === 2) return 'One pair'
-  return 'High card'
+  if (sizes[0] === 4) return 'Carré'
+  if (sizes[0] === 3) return 'Brelan'
+  if (sizes[0] === 2 && sizes[1] === 2) return 'Double paire'
+  if (sizes[0] === 2) return 'Paire'
+  return 'Carte haute'
 }
 
 function handSize(room: { activeChallengeCards?: number[] }) {
@@ -372,12 +372,12 @@ export const saveGameLog = mutation({
   returns: v.string(),
   handler: async (ctx, { code, playerId, shareKey }) => {
     const room = await getRoomByCode(ctx, code)
-    if (!room || !room.gameLogId || !room.players.some((player) => player.id === playerId)) throw new Error('Only a player at this table can save the replay.')
+    if (!room || !room.gameLogId || !room.players.some((player) => player.id === playerId)) throw new Error('Seul un joueur de cette table peut enregistrer la rediffusion.')
     const gameLog = await ctx.db.get(room.gameLogId)
-    if (!gameLog) throw new Error('The game log could not be found.')
+    if (!gameLog) throw new Error('Le journal de partie est introuvable.')
     if (gameLog.shareKey) return gameLog.shareKey
     const keyOwner = await ctx.db.query('gameLogs').withIndex('by_share_key', (q) => q.eq('shareKey', shareKey)).unique()
-    if (keyOwner) throw new Error('Could not create a replay link. Please try again.')
+    if (keyOwner) throw new Error('Impossible de créer un lien de rediffusion. Veuillez réessayer.')
     await ctx.db.patch(gameLog._id, { shareKey, savedAt: Date.now() })
     return shareKey
   },
@@ -412,10 +412,10 @@ export const joinRoom = mutation({
   returns: v.null(),
   handler: async (ctx, { code, playerId, name }) => {
     const room = await getRoomByCode(ctx, code)
-    if (!room) throw new Error('We couldn’t find a room with that code.')
-    if (room.status !== 'lobby') throw new Error('This game has already started.')
+    if (!room) throw new Error('Aucune salle ne correspond à ce code.')
+    if (room.status !== 'lobby') throw new Error('Cette partie a déjà commencé.')
     if (room.players.some((player: { id: string }) => player.id === playerId)) return null
-    if (room.players.length >= 6) throw new Error('This room is full. The Gang plays with up to 6 players.')
+    if (room.players.length >= 6) throw new Error('Cette salle est pleine. The Gang se joue jusqu’à 6 joueurs.')
     await ctx.db.patch(room._id, {
       players: [...room.players, { id: playerId, name: name.trim().slice(0, 20), ready: false, cards: [], tokenPicks: [] }],
     })
@@ -428,8 +428,8 @@ export const setReady = mutation({
   returns: v.null(),
   handler: async (ctx, { code, playerId, ready }) => {
     const room = await getRoomByCode(ctx, code)
-    if (!room || room.status !== 'lobby') throw new Error('This room is no longer in the lobby.')
-    if (!room.players.some((player: { id: string }) => player.id === playerId)) throw new Error('You’re not in this room.')
+    if (!room || room.status !== 'lobby') throw new Error('Cette salle n’est plus dans le salon d’attente.')
+    if (!room.players.some((player: { id: string }) => player.id === playerId)) throw new Error('Vous n’êtes pas dans cette salle.')
     await ctx.db.patch(room._id, { players: room.players.map((player: any) => player.id === playerId ? { ...player, ready } : player) })
     return null
   },
@@ -444,8 +444,8 @@ export const chooseMode = mutation({
   returns: v.null(),
   handler: async (ctx, { code, playerId, mode }) => {
     const room = await getRoomByCode(ctx, code)
-    if (!room || room.status !== 'lobby') throw new Error('Choose a mode before the game begins.')
-    if (room.hostId !== playerId) throw new Error('Only the host can choose the game mode.')
+    if (!room || room.status !== 'lobby') throw new Error('Choisissez un mode avant le début de la partie.')
+    if (room.hostId !== playerId) throw new Error('Seul l’hôte peut choisir le mode de jeu.')
     await ctx.db.patch(room._id, { mode })
     return null
   },
@@ -460,10 +460,10 @@ export const startGame = mutation({
   returns: v.null(),
   handler: async (ctx, { code, playerId, mode: requestedMode }) => {
     const room = await getRoomByCode(ctx, code)
-    if (!room || room.hostId !== playerId) throw new Error('Only the host can start this game.')
-    if (room.status !== 'lobby') throw new Error('This game has already started.')
-    if (room.players.length < 2) throw new Error('Invite at least one more player to start.')
-    if (!room.players.every((player: { ready: boolean }) => player.ready)) throw new Error('Everyone needs to be ready first.')
+    if (!room || room.hostId !== playerId) throw new Error('Seul l’hôte peut lancer cette partie.')
+    if (room.status !== 'lobby') throw new Error('Cette partie a déjà commencé.')
+    if (room.players.length < 2) throw new Error('Invitez au moins un autre joueur pour commencer.')
+    if (!room.players.every((player: { ready: boolean }) => player.ready)) throw new Error('Tout le monde doit d’abord être prêt.')
 
     const mode = requestedMode ?? room.mode ?? 'advanced'
     const pool = challengePool(mode)
@@ -528,20 +528,20 @@ export const pickToken = mutation({
   returns: v.null(),
   handler: async (ctx, { code, playerId, value }) => {
     const room = await getRoomByCode(ctx, code)
-    if (!room || room.status !== 'playing' || room.phase !== 'ranking') throw new Error('Token picks are closed for this round.')
-    if (!room.players.some((player: { id: string }) => player.id === playerId)) throw new Error('You’re not in this room.')
-    if (!Number.isInteger(value) || value < 1 || value > room.players.length) throw new Error('Choose one of the available ranking tokens.')
+    if (!room || room.status !== 'playing' || room.phase !== 'ranking') throw new Error('Le choix des jetons est terminé pour cette manche.')
+    if (!room.players.some((player: { id: string }) => player.id === playerId)) throw new Error('Vous n’êtes pas dans cette salle.')
+    if (!Number.isInteger(value) || value < 1 || value > room.players.length) throw new Error('Choisissez l’un des jetons de classement disponibles.')
     const players = room.players.map((player: any) => ({ ...player, tokenPicks: player.tokenPicks ?? [] }))
     const player = players.find((item: any) => item.id === playerId)
     const picks = player.tokenPicks as { round: number; value: number }[]
     const currentPick = picks.find((pick) => pick.round === room.round)
     const active = room.activeChallengeCards ?? []
     const lockedValue = active.includes(2) && room.round <= 3 ? 1 : active.includes(6) && room.round <= 3 ? room.players.length : null
-    if (currentPick && currentPick.value === lockedValue && currentPick.value !== value) throw new Error('This token is locked by the active challenge.')
+    if (currentPick && currentPick.value === lockedValue && currentPick.value !== value) throw new Error('Ce jeton est verrouillé par le défi actif.')
     const previousOwner = players.find((item: any) => item.id !== playerId && (item.tokenPicks ?? []).some((pick: any) => pick.round === room.round && pick.value === value))
     if (previousOwner) {
       const ownerPick = previousOwner.tokenPicks.find((pick: any) => pick.round === room.round)
-      if (ownerPick?.value === lockedValue) throw new Error('That token is locked by the active challenge.')
+      if (ownerPick?.value === lockedValue) throw new Error('Ce jeton est verrouillé par le défi actif.')
       previousOwner.tokenPicks = previousOwner.tokenPicks.filter((pick: any) => pick.round !== room.round)
     }
     player.tokenPicks = currentPick
@@ -562,7 +562,7 @@ export const pickToken = mutation({
         displacedPlayerName: previousOwner?.name,
       })
       if (value === lockedValue) {
-        await recordModifier(ctx, room.gameLogId, active.includes(2) ? 2 : 6, `${player.name}'s ${value} token is locked for this round`, { round: room.round, playerId, playerName: player.name, value })
+        await recordModifier(ctx, room.gameLogId, active.includes(2) ? 2 : 6, `le jeton ${value} de ${player.name} est verrouillé pour cette manche`, { round: room.round, playerId, playerName: player.name, value })
       }
     }
     if (!players.every((item: any) => item.tokenPicks.some((pick: any) => pick.round === room.round))) {
@@ -597,7 +597,7 @@ export const pickToken = mutation({
           target.cards = replacement.cards.sort((a: number, b: number) => a - b)
           roundModifiers.push({
             card: redrawLowest ? 3 : 7,
-            note: `${redrawLowest ? 'the flop has a face card' : 'the flop has no face card'}, so ${target.name} (token ${targetValue}) drew a new hand`,
+            note: `${redrawLowest ? 'le flop contient une figure' : 'le flop ne contient aucune figure'}, donc ${target.name} (jeton ${targetValue}) a pioché une nouvelle main`,
             details: { playerId: target.id, playerName: target.name, value: targetValue },
           })
         }
@@ -607,7 +607,7 @@ export const pickToken = mutation({
       addCommunity(1)
       if (activeChallengeCards.includes(5)) {
         addCommunity(1)
-        roundModifiers.push({ card: 5, note: 'the turn and river were dealt together, skipping a ranking round' })
+        roundModifiers.push({ card: 5, note: 'la turn et la river ont été distribuées ensemble, une manche de classement est sautée' })
         round = 4
       } else round = 3
     } else if (round === 3) {
@@ -638,7 +638,7 @@ export const pickToken = mutation({
     if (activeChallengeCards.includes(8)) {
       const previousRound = activeChallengeCards.includes(5) && room.round === 2 ? 2 : round - 1
       for (const item of players as any[]) item.tokenPicks = item.tokenPicks.filter((pick: any) => pick.round !== previousRound)
-      await recordModifier(ctx, room.gameLogId, 8, `round ${previousRound} tokens were hidden from the table`, { round })
+      await recordModifier(ctx, room.gameLogId, 8, `les jetons de la manche ${previousRound} ont été retirés de la table`, { round })
     }
     await ctx.db.patch(room._id, { players, round, phase: 'ranking', deck, communityCards, tokenStealNotice, tokenHistory })
     return null
@@ -650,26 +650,26 @@ export const submitChallengeGuess = mutation({
   returns: v.null(),
   handler: async (ctx, { code, playerId, guess }) => {
     const room = await getRoomByCode(ctx, code)
-    if (!room || room.status !== 'playing' || room.phase !== 'challenge') throw new Error('There is no challenge check waiting.')
-    if (room.hostId !== playerId) throw new Error('Only the host can submit the crew’s guess.')
+    if (!room || room.status !== 'playing' || room.phase !== 'challenge') throw new Error('Aucun contrôle de défi n’est en attente.')
+    if (room.hostId !== playerId) throw new Error('Seul l’hôte peut valider la proposition de l’équipe.')
     const completed = room.completedChallengeChecks ?? []
     const challengeId = (room.challengeChecks ?? []).find((id) => !completed.includes(id))
-    if (challengeId === undefined) throw new Error('All challenge checks have already been completed.')
+    if (challengeId === undefined) throw new Error('Tous les contrôles de défi ont déjà été effectués.')
     const topTokenValue = room.players.length
     const target = room.players.find((player) => player.tokenPicks?.some((pick) => pick.round === 4 && pick.value === topTokenValue))
-    if (!target) throw new Error('The highest red-token player could not be found.')
+    if (!target) throw new Error('Le joueur avec le plus haut jeton rouge est introuvable.')
     let correct = false
     let guessLabel = String(guess)
     if (challengeId === 4) {
-      if (!Number.isInteger(guess) || guess < 2 || guess > 14) throw new Error('Choose a card value from 2 through Ace.')
-      guessLabel = guess === 14 ? 'Ace' : guess >= 11 ? ['Jack', 'Queen', 'King'][guess - 11] : String(guess)
+      if (!Number.isInteger(guess) || guess < 2 || guess > 14) throw new Error('Choisissez une valeur de carte entre 2 et As.')
+      guessLabel = guess === 14 ? 'As' : guess >= 11 ? ['Valet', 'Dame', 'Roi'][guess - 11] : String(guess)
       correct = target.cards.some((card) => {
         const rank = ((card - 1) % 13) + 1
         return (rank === 1 ? 14 : rank) === guess
       })
     } else {
-      const categories = ['High card', 'One pair', 'Two pair', 'Three of a kind', 'Straight', 'Flush', 'Full house', 'Four of a kind', 'Straight flush']
-      if (!Number.isInteger(guess) || guess < 0 || guess >= categories.length) throw new Error('Choose a valid poker hand category.')
+      const categories = ['Carte haute', 'Paire', 'Double paire', 'Brelan', 'Quinte', 'Couleur', 'Full', 'Carré', 'Quinte flush']
+      if (!Number.isInteger(guess) || guess < 0 || guess >= categories.length) throw new Error('Choisissez une combinaison de poker valide.')
       guessLabel = categories[guess]
       const hand = bestHand([...(target.cards ?? []), ...(room.communityCards ?? [])])
       correct = guessLabel === hand.category
@@ -712,14 +712,14 @@ export const revealNextHand = mutation({
   returns: v.null(),
   handler: async (ctx, { code, playerId }) => {
     const room = await getRoomByCode(ctx, code)
-    if (!room || room.status !== 'playing' || room.phase !== 'reveal') throw new Error('There is no hand waiting to be revealed.')
+    if (!room || room.status !== 'playing' || room.phase !== 'reveal') throw new Error('Aucune main n’attend d’être révélée.')
   const revealOrder = room.revealOrder ?? []
   const reveals = room.reveals ?? []
   const nextId = revealOrder[reveals.length]
-  if (!nextId) throw new Error('Every hand has already been revealed.')
-  if (nextId !== playerId) throw new Error('It is not your turn to reveal your hand.')
+  if (!nextId) throw new Error('Toutes les mains ont déjà été révélées.')
+  if (nextId !== playerId) throw new Error('Ce n’est pas à vous de révéler votre main.')
     const player = room.players.find((entry: { id: string }) => entry.id === nextId)
-    if (!player) throw new Error('This player is no longer at the table.')
+    if (!player) throw new Error('Ce joueur n’est plus à la table.')
     const hand = bestHand([...(player.cards ?? []), ...(room.communityCards ?? [])])
     const reveal = { playerId: nextId, cards: [...(player.cards ?? []), ...(room.communityCards ?? [])], category: hand.label, score: hand.score }
     const updatedReveals = [...reveals, reveal]
@@ -777,8 +777,8 @@ export const startNextHeist = mutation({
   returns: v.null(),
   handler: async (ctx, { code, playerId }) => {
     const room = await getRoomByCode(ctx, code)
-    if (!room || room.hostId !== playerId) throw new Error('Only the host can deal the next heist.')
-    if (room.status !== 'playing' || room.phase !== 'result') throw new Error('The current heist is not ready to restart.')
+    if (!room || room.hostId !== playerId) throw new Error('Seul l’hôte peut distribuer le prochain casse.')
+    if (room.status !== 'playing' || room.phase !== 'result') throw new Error('Le casse en cours ne peut pas encore être relancé.')
     let activeChallengeCards = room.activeChallengeCards ?? []
     let activeSpecialistCard: number | undefined
     let replacedChallenge: { removed: number; added: number } | undefined
@@ -822,7 +822,7 @@ export const startNextHeist = mutation({
       specialistCard: activeSpecialistCard,
     })
     if (replacedChallenge) {
-      await recordModifier(ctx, room.gameLogId, replacedChallenge.added, `the alarm brought it in, replacing ${challengeNames[replacedChallenge.removed - 1]}`, { round: 1 })
+      await recordModifier(ctx, room.gameLogId, replacedChallenge.added, `l’alarme l’a fait entrer, en remplaçant ${challengeNames[replacedChallenge.removed - 1]}`, { round: 1 })
     }
     await recordHeistSetupModifiers(ctx, room.gameLogId, activeChallengeCards)
     if (communityCards.length) await recordGameEvent(ctx, room.gameLogId, 'board_revealed', { round: 1, cards: communityCards })
@@ -854,11 +854,11 @@ export const revealHandRanking = mutation({
   returns: v.null(),
   handler: async (ctx, { code, playerId }) => {
     const room = await getRoomByCode(ctx, code)
-    if (!room || room.status !== 'playing' || room.phase !== 'ranking') throw new Error('Specialists can only be used while the crew is ranking.')
-    if (room.activeSpecialistCard !== 2) throw new Error('The Getaway Driver is not active for this heist.')
-    if (room.specialistUse) throw new Error('The Getaway Driver has already been used this heist.')
+    if (!room || room.status !== 'playing' || room.phase !== 'ranking') throw new Error('Les spécialistes ne peuvent être utilisés que pendant le classement.')
+    if (room.activeSpecialistCard !== 2) throw new Error('Le Chauffeur n’est pas actif pour ce casse.')
+    if (room.specialistUse) throw new Error('Le Chauffeur a déjà été utilisé pendant ce casse.')
     const player = room.players.find((candidate) => candidate.id === playerId)
-    if (!player) throw new Error('You are not part of this crew.')
+    if (!player) throw new Error('Vous ne faites pas partie de cette équipe.')
     const category = currentHandCategory([...(player.cards ?? []), ...(room.communityCards ?? [])])
     await ctx.db.patch(room._id, { specialistUse: { card: 2, playerId, playerName: player.name, round: room.round, category } })
     await recordGameEvent(ctx, room.gameLogId, 'specialist_used', { round: room.round, playerId, playerName: player.name, specialistCard: 2, category })

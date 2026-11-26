@@ -36,40 +36,40 @@ type GameFlowProps = {
   playerId: string
 }
 
-const challengeNames = ['Quick Access', 'Noise Sensors', 'Motion Detector', 'Retina Scan', 'Hasty Getaway', 'Ventilation Shaft', 'Laser Tripwires', 'Blackout', 'Fingerprint Scan', 'Security Cameras']
+const challengeNames = ['Accès rapide', 'Capteurs sonores', 'Détecteur de mouvement', 'Scanner rétinien', 'Fuite précipitée', 'Conduit d’aération', 'Rayons laser', 'Panne de courant', 'Scanner d’empreintes', 'Caméras de surveillance']
 const challengeRules = [
-  'Skip the white-token round and reveal the flop immediately.',
-  'A picked 1 token is locked for the rest of the heist in rounds 1–3.',
-  'A face card on the flop triggers a redraw for the lowest white-token player.',
-  'Before the showdown, the crew must guess a card held by the highest red-token player.',
-  'Skip orange-token selection; the turn and river are still revealed.',
-  'The highest token in rounds 1–3 locks as soon as it is taken.',
-  'If the flop has no face card, the highest white-token player redraws.',
-  'Earlier-round tokens are removed as the next round begins.',
-  'Before the showdown, the crew must guess the highest red-token player’s hand category.',
-  'Deal three private cards; build the best five-card hand from those and the board.',
+  'La manche des jetons blancs est sautée et le flop est révélé immédiatement.',
+  'Un jeton 1 choisi est verrouillé pendant les manches 1 à 3.',
+  'Une figure sur le flop fait repiocher le joueur au plus petit jeton blanc.',
+  'Avant l’abattage, l’équipe doit deviner une carte du joueur au plus haut jeton rouge.',
+  'Le choix des jetons orange est sauté ; la turn et la river sont tout de même révélées.',
+  'Le plus haut jeton des manches 1 à 3 est verrouillé dès qu’il est pris.',
+  'Si le flop ne contient aucune figure, le joueur au plus haut jeton blanc repioche.',
+  'Les jetons de la manche précédente sont retirés au début de la manche suivante.',
+  'Avant l’abattage, l’équipe doit deviner la combinaison du joueur au plus haut jeton rouge.',
+  'Trois cartes privées sont distribuées ; formez la meilleure main de cinq cartes avec elles et le tableau.',
 ]
-const specialistNames = ['Informant', 'Getaway Driver', 'Investor', 'Mastermind', 'Hacker', 'Coordinator', 'Jack', 'Math Whiz', 'Con Artist', 'Muscle']
+const specialistNames = ['Informateur', 'Chauffeur', 'Investisseur', 'Cerveau', 'Hacker', 'Coordinateur', 'Valet', 'Matheux', 'Escroc', 'Gros bras']
 const specialistRules = [
-  'One player privately shows a pocket card to another.',
-  'One player reveals their current hand ranking.',
-  'Everyone declares how many face cards they hold.',
-  'One player reveals how many cards of a chosen value they hold.',
-  'One player draws a card, then discards one.',
-  'Everyone passes one pocket card to the left.',
-  'Replace one pocket card with a Jack.',
-  'Everyone declares the sum of their pocket-card values.',
-  'Shuffle and redistribute all pocket cards.',
-  'This player wins ties against other hands of the same rank.',
+  'Un joueur montre secrètement une carte privée à un autre.',
+  'Un joueur révèle la combinaison actuelle de sa main.',
+  'Chacun annonce combien de figures il possède.',
+  'Un joueur révèle combien de cartes d’une valeur choisie il possède.',
+  'Un joueur pioche une carte, puis en défausse une.',
+  'Chacun passe une carte privée à son voisin de gauche.',
+  'Remplacez une carte privée par un Valet.',
+  'Chacun annonce la somme des valeurs de ses cartes privées.',
+  'Toutes les cartes privées sont mélangées et redistribuées.',
+  'Ce joueur l’emporte en cas d’égalité avec une main de même rang.',
 ]
 const roundColors = ['white', 'yellow', 'orange', 'red']
-const roundNames = ['White', 'Yellow', 'Orange', 'Red']
+const roundNames = ['blancs', 'jaunes', 'orange', 'rouges']
 const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
 
 function modeCopy(mode: GameFlowProps['room']['mode']) {
-  if (mode === 'professional') return 'One permanent Challenge stays active. Successful heists add a temporary Challenge; a failed heist earns a Specialist.'
-  if (mode === 'master-thief') return 'Two Challenges stay active, no Specialists are dealt, and two alarms end the game.'
-  return 'Start with no modifiers. A win adds a Challenge to the next heist; a loss earns a Specialist.'
+  if (mode === 'professional') return 'Un Défi permanent reste actif. Un casse réussi ajoute un Défi temporaire ; un casse raté rapporte un Spécialiste.'
+  if (mode === 'master-thief') return 'Deux Défis restent actifs, aucun Spécialiste n’est distribué et deux alarmes mettent fin à la partie.'
+  return 'Aucun modificateur au départ. Une victoire ajoute un Défi au prochain casse ; une défaite rapporte un Spécialiste.'
 }
 
 function ActiveChallengeFab({ cards }: { cards: number[] }) {
@@ -77,11 +77,11 @@ function ActiveChallengeFab({ cards }: { cards: number[] }) {
   if (!cards.length) return null
 
   return <div className={`challenge-fab ${open ? 'is-open' : ''}`}>
-    <button type="button" className="challenge-fab-trigger" aria-label="View active challenge" aria-expanded={open} aria-controls="active-challenge-details" onClick={() => setOpen((value) => !value)} onKeyDown={(event) => { if (event.key === 'Escape') setOpen(false) }}>
-      <Flame size={18}/><span className="sr-only">Active challenge</span>
+    <button type="button" className="challenge-fab-trigger" aria-label="Voir le défi actif" aria-expanded={open} aria-controls="active-challenge-details" onClick={() => setOpen((value) => !value)} onKeyDown={(event) => { if (event.key === 'Escape') setOpen(false) }}>
+      <Flame size={18}/><span className="sr-only">Défi actif</span>
     </button>
     <div id="active-challenge-details" className="challenge-fab-details" role="status">
-      <span className="section-kicker">ACTIVE CHALLENGE{cards.length > 1 ? 'S' : ''}</span>
+      <span className="section-kicker">{cards.length > 1 ? 'DÉFIS ACTIFS' : 'DÉFI ACTIF'}</span>
       {cards.map((id) => <article key={id}><strong>{challengeNames[id - 1]}</strong><p>{challengeRules[id - 1]}</p></article>)}
     </div>
   </div>
@@ -97,26 +97,26 @@ function TableModifiers({ room, busy, onUseGetawayDriver }: { room: GameFlowProp
   if (!challenges.length && !specialist && !pendingChallenge && !pendingSpecialist) return null
   const canUseGetawayDriver = specialist === 2 && room.phase === 'ranking' && !use
 
-  return <div className="table-modifiers" role="region" aria-label="Active modifiers">
+  return <div className="table-modifiers" role="region" aria-label="Modificateurs actifs">
     {challenges.map((id) => <details className="table-modifier table-modifier-challenge" key={`challenge-${id}`}>
-      <summary><Flame size={13} aria-hidden="true"/><span className="table-modifier-kind">Challenge</span><strong>{challengeNames[id - 1]}</strong></summary>
+      <summary><Flame size={13} aria-hidden="true"/><span className="table-modifier-kind">Défi</span><strong>{challengeNames[id - 1]}</strong></summary>
       <p>{challengeRules[id - 1]}</p>
     </details>)}
     {specialist && <details className="table-modifier table-modifier-specialist" open={specialist === 2 ? true : undefined}>
-      <summary><Shield size={13} aria-hidden="true"/><span className="table-modifier-kind">Specialist</span><strong>{specialistNames[specialist - 1]}</strong></summary>
-      <p>{specialist === 2 ? 'Once this heist, while ranking, one player can reveal their current hand ranking to the crew.' : specialistRules[specialist - 1]}</p>
+      <summary><Shield size={13} aria-hidden="true"/><span className="table-modifier-kind">Spécialiste</span><strong>{specialistNames[specialist - 1]}</strong></summary>
+      <p>{specialist === 2 ? 'Une fois par casse, pendant le classement, un joueur peut révéler à l’équipe la combinaison actuelle de sa main.' : specialistRules[specialist - 1]}</p>
       {specialist === 2 && (use
-        ? <p className="table-modifier-result" role="status"><strong>{use.playerName}</strong> has <strong>{use.category}</strong> <span>(round {use.round})</span></p>
+        ? <p className="table-modifier-result" role="status"><strong>{use.playerName}</strong> a <strong>{use.category}</strong> <span>(manche {use.round})</span></p>
         : canUseGetawayDriver
-          ? <button type="button" className="table-modifier-action" disabled={busy} onClick={onUseGetawayDriver}>Reveal my hand ranking</button>
-          : <p className="table-modifier-muted">Available during a ranking round.</p>)}
+          ? <button type="button" className="table-modifier-action" disabled={busy} onClick={onUseGetawayDriver}>Révéler ma combinaison</button>
+          : <p className="table-modifier-muted">Disponible pendant une manche de classement.</p>)}
     </details>}
     {pendingChallenge && <details className="table-modifier table-modifier-challenge is-pending">
-      <summary><Flame size={13} aria-hidden="true"/><span className="table-modifier-kind">Next heist</span><strong>{challengeNames[pendingChallenge - 1]}</strong></summary>
+      <summary><Flame size={13} aria-hidden="true"/><span className="table-modifier-kind">Prochain casse</span><strong>{challengeNames[pendingChallenge - 1]}</strong></summary>
       <p>{challengeRules[pendingChallenge - 1]}</p>
     </details>}
     {pendingSpecialist && <details className="table-modifier table-modifier-specialist is-pending">
-      <summary><Shield size={13} aria-hidden="true"/><span className="table-modifier-kind">Next heist</span><strong>{specialistNames[pendingSpecialist - 1]}</strong></summary>
+      <summary><Shield size={13} aria-hidden="true"/><span className="table-modifier-kind">Prochain casse</span><strong>{specialistNames[pendingSpecialist - 1]}</strong></summary>
       <p>{specialistRules[pendingSpecialist - 1]}</p>
     </details>}
   </div>
@@ -127,16 +127,16 @@ function TokenHistory({ room }: { room: GameFlowProps['room'] }) {
     (player.tokenPicks ?? []).map((pick) => ({ ...pick, playerId: player.id })),
   )
 
-  return <section className="token-history" aria-label="Token picks by round and player">
-    <div className="token-history-heading"><strong>Token history</strong><span>Assignments update when a token is stolen.</span></div>
+  return <section className="token-history" aria-label="Jetons choisis par manche et par joueur">
+    <div className="token-history-heading"><strong>Historique des jetons</strong><span>Mis à jour quand un jeton est volé.</span></div>
     <table>
-      <caption className="sr-only">Each player’s final token assignment across rounds, from left to right</caption>
-      <thead><tr><th scope="col">Player</th>{[1, 2, 3, 4].map((round) => <th scope="col" key={round}>Round {round}</th>)}</tr></thead>
+      <caption className="sr-only">Jeton final de chaque joueur par manche, de gauche à droite</caption>
+      <thead><tr><th scope="col">Joueur</th>{[1, 2, 3, 4].map((round) => <th scope="col" key={round}>Manche {round}</th>)}</tr></thead>
       <tbody>{room.players.map((player) => <tr key={player.id}>
         <th scope="row">{player.name}</th>
         {[1, 2, 3, 4].map((round) => {
           const pick = history.find((entry) => entry.round === round && entry.playerId === player.id)
-          return <td key={round}>{pick ? <span className="token-history-token">{pick.value}</span> : <span className="token-history-empty" aria-label="No token picked">—</span>}</td>
+          return <td key={round}>{pick ? <span className="token-history-token">{pick.value}</span> : <span className="token-history-empty" aria-label="Aucun jeton choisi">—</span>}</td>
         })}
       </tr>)}</tbody>
     </table>
@@ -179,29 +179,29 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
     return () => window.clearTimeout(timeout)
   }, [board.length])
 
-  const viewModeToggle = <div className="game-view-toggle" role="group" aria-label="Choose game display mode">
-    <span>TABLE VIEW</span>
-    <button type="button" aria-pressed={displayMode === 'text'} onClick={() => setDisplayMode('text')}>Text</button>
-    <button type="button" aria-pressed={displayMode === 'real'} onClick={() => setDisplayMode('real')}>Real table</button>
+  const viewModeToggle = <div className="game-view-toggle" role="group" aria-label="Choisir l’affichage de la partie">
+    <span>AFFICHAGE</span>
+    <button type="button" aria-pressed={displayMode === 'text'} onClick={() => setDisplayMode('text')}>Texte</button>
+    <button type="button" aria-pressed={displayMode === 'real'} onClick={() => setDisplayMode('real')}>Table réelle</button>
   </div>
   const colorName = roundColors[room.round - 1] ?? 'red'
   const tokenPicker = room.phase === 'ranking' ? <div className={`token-picker token-picker-${colorName}`}>
-    <div className="token-picker-heading"><strong>Where do you rank?</strong><span>1 is lowest · {room.players.length} is highest</span></div>
+    <div className="token-picker-heading"><strong>Où vous situez-vous ?</strong><span>1 = le plus faible · {room.players.length} = le plus fort</span></div>
     <div className="token-options">{availableTokens.map((value) => {
       const taken = takenTokens.includes(value)
       const locked = (value === lockedToken && taken) || (currentPick?.value === lockedToken && currentPick.value !== value)
       const selected = currentPick?.value === value
       return <button key={value} className={`rank-token ${selected ? 'is-selected' : ''} ${taken ? 'is-taken' : ''}`} aria-pressed={selected} disabled={busy || locked} onClick={() => void run(() => pickToken({ code: room.code, playerId, value }))}>
-        {selected ? <Check size={14}/> : value}<span>{selected ? 'Your pick' : taken ? 'Steal' : value === 1 ? 'Lowest' : value === room.players.length ? 'Highest' : 'Rank'}</span>
+        {selected ? <Check size={14}/> : value}<span>{selected ? 'Votre choix' : taken ? 'Voler' : value === 1 ? 'Plus faible' : value === room.players.length ? 'Plus fort' : 'Rang'}</span>
       </button>
     })}</div>
-    <p className="token-note">{currentPick ? `You chose token ${currentPick.value}. You can change it until everyone has ranked.` : 'Choose a token. You can take one from another player, who will need to choose again.'}</p>
+    <p className="token-note">{currentPick ? `Vous avez choisi le jeton ${currentPick.value}. Vous pouvez changer tant que tout le monde n’a pas classé.` : 'Choisissez un jeton. Vous pouvez en prendre un à un autre joueur, qui devra alors en choisir un nouveau.'}</p>
   </div> : null
   const canRevealHand = room.phase === 'reveal' && nextPlayer?.id === playerId
   const tableModifiers = <TableModifiers room={room} busy={busy} onUseGetawayDriver={() => void run(() => revealHandRanking({ code: room.code, playerId }))}/>
   const isReal = displayMode === 'real'
   const nextHeistButton = room.phase === 'result' && room.status === 'playing'
-    ? <button className="button button-primary full-button next-heist-button" disabled={!isHost || busy} onClick={() => void run(() => startNextHeist({ code: room.code, playerId }))}>{busy ? <LoaderCircle className="spin" size={16}/> : <Sparkles size={16}/>} {isHost ? 'Deal the next heist' : 'Waiting for the host'} </button>
+    ? <button className="button button-primary full-button next-heist-button" disabled={!isHost || busy} onClick={() => void run(() => startNextHeist({ code: room.code, playerId }))}>{busy ? <LoaderCircle className="spin" size={16}/> : <Sparkles size={16}/>} {isHost ? 'Distribuer le prochain casse' : 'En attente de l’hôte'} </button>
     : null
   const realTable = isReal ? <RealCasinoTable players={room.players} board={board} playerId={playerId} phase={room.phase} reveals={reveals} nextPlayerId={nextPlayer?.id} burningCard={burningCard} tokenPicker={tokenPicker} modifiers={tableModifiers} tableAction={nextHeistButton} revealBusy={busy} onRevealHand={() => void run(() => revealNextHand({ code: room.code, playerId }))}/> : null
   const completedChecks = room.completedChallengeChecks ?? []
@@ -210,33 +210,33 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
   async function run(action: () => Promise<unknown>) {
     setError('')
     setBusy(true)
-    try { await action() } catch (cause) { setError(cause instanceof Error ? cause.message : 'Something went wrong. Try again.') }
+    try { await action() } catch (cause) { setError(cause instanceof Error ? cause.message : 'Une erreur est survenue. Réessayez.') }
     finally { setBusy(false) }
   }
 
   const stageMessage = room.round === 1
-    ? 'Use your two private cards to decide where you belong.'
+    ? 'Utilisez vos deux cartes privées pour décider de votre place.'
     : room.round === 2
-      ? 'The flop is out. Reconsider your place with three shared cards.'
+      ? 'Le flop est sorti. Reconsidérez votre place avec trois cartes communes.'
       : room.round === 3
-        ? 'The turn is out. Refine your ranking with four shared cards.'
-        : 'The river is out. Make your final ranking before the reveal.'
+        ? 'La turn est sortie. Affinez votre classement avec quatre cartes communes.'
+        : 'La river est sortie. Faites votre classement final avant la révélation.'
 
   if (room.status === 'lobby') {
     return <section className="hand-panel">
       <div className="table-waiting">
         <div className="waiting-icon"><Sparkles size={24}/></div>
-        <span className="section-kicker">CHOOSE YOUR HEIST</span>
-        <h2>Pick a difficulty<br/>for the <em>crew.</em></h2>
-        {isHost ? <label className="mode-picker">Game mode
+        <span className="section-kicker">CHOISISSEZ VOTRE CASSE</span>
+        <h2>Choisissez une difficulté<br/>pour la <em>bande.</em></h2>
+        {isHost ? <label className="mode-picker">Mode de jeu
           <select value={room.mode ?? 'advanced'} disabled={busy} onChange={(event) => void run(() => chooseMode({ code: room.code, playerId, mode: event.target.value as 'advanced' | 'professional' | 'master-thief' }))}>
-            <option value="advanced">Advanced</option>
-            <option value="professional">Professional</option>
-            <option value="master-thief">Master Thief</option>
+            <option value="advanced">Avancé</option>
+            <option value="professional">Professionnel</option>
+            <option value="master-thief">Maître voleur</option>
           </select>
-        </label> : <strong className="mode-name">{room.mode === 'master-thief' ? 'Master Thief' : room.mode === 'professional' ? 'Professional' : 'Advanced'} mode</strong>}
+        </label> : <strong className="mode-name">Mode {room.mode === 'master-thief' ? 'Maître voleur' : room.mode === 'professional' ? 'Professionnel' : 'Avancé'}</strong>}
         <p>{modeCopy(room.mode)}</p>
-        {room.mode === 'master-thief' && <span className="mode-warning"><Flame size={14}/> Two alarms and the game is over.</span>}
+        {room.mode === 'master-thief' && <span className="mode-warning"><Flame size={14}/> Deux alarmes et la partie est terminée.</span>}
       </div>
     </section>
   }
@@ -248,29 +248,29 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
       {!isReal && <ActiveChallengeFab cards={activeChallenges}/>}
       {realTable}
       <div className={`heist-result ${failed ? 'result-failed' : 'result-success'}`}>
-        <span className="section-kicker">HEIST {failed ? 'FAILED' : 'CLEARED'}</span>
-        <h2>{failed ? <>The alarm is <em>ringing.</em></> : <>Vault <em>opened.</em></>}</h2>
-        <p>{failed ? `The hand order broke. ${room.alarms ?? 0} alarm${room.alarms === 1 ? '' : 's'} so far.` : 'Every hand rose higher than the one before it.'}</p>
-        {room.status === 'finished' && <p className="game-over-note">The crew hit the alarm limit. This game is over.</p>}
+        <span className="section-kicker">{failed ? 'CASSE RATÉ' : 'CASSE RÉUSSI'}</span>
+        <h2>{failed ? <>L’alarme <em>retentit.</em></> : <>Coffre <em>ouvert.</em></>}</h2>
+        <p>{failed ? `L’ordre des mains est rompu. ${room.alarms ?? 0} alarme${(room.alarms ?? 0) > 1 ? 's' : ''} jusqu’ici.` : 'Chaque main était plus forte que la précédente.'}</p>
+        {room.status === 'finished' && <p className="game-over-note">La bande a atteint la limite d’alarmes. La partie est terminée.</p>}
         {!isReal && <div className="modifier-draws">
-          {room.pendingSpecialistCard && <div className="modifier-card specialist-card"><span><Shield size={15}/> RED SPECIALIST</span><strong>{specialistNames[room.pendingSpecialistCard - 1]}</strong><p>{specialistRules[room.pendingSpecialistCard - 1]}</p></div>}
-          {room.pendingChallengeCard && <div className="modifier-card challenge-card"><span><Flame size={15}/> GREEN CHALLENGE</span><strong>{challengeNames[room.pendingChallengeCard - 1]}</strong><p>{challengeRules[room.pendingChallengeCard - 1]}</p></div>}
-          {room.activeSpecialistCard && <div className="modifier-card specialist-card"><span><Shield size={15}/> ACTIVE SPECIALIST</span><strong>{specialistNames[room.activeSpecialistCard - 1]}</strong><p>{specialistRules[room.activeSpecialistCard - 1]}</p></div>}
+          {room.pendingSpecialistCard && <div className="modifier-card specialist-card"><span><Shield size={15}/> SPÉCIALISTE ROUGE</span><strong>{specialistNames[room.pendingSpecialistCard - 1]}</strong><p>{specialistRules[room.pendingSpecialistCard - 1]}</p></div>}
+          {room.pendingChallengeCard && <div className="modifier-card challenge-card"><span><Flame size={15}/> DÉFI VERT</span><strong>{challengeNames[room.pendingChallengeCard - 1]}</strong><p>{challengeRules[room.pendingChallengeCard - 1]}</p></div>}
+          {room.activeSpecialistCard && <div className="modifier-card specialist-card"><span><Shield size={15}/> SPÉCIALISTE ACTIF</span><strong>{specialistNames[room.activeSpecialistCard - 1]}</strong><p>{specialistRules[room.activeSpecialistCard - 1]}</p></div>}
         </div>}
         {!isReal && nextHeistButton}
       </div>
       <div className="reveal-history">
-        <div className="hand-topline"><span><Eye size={15}/> Revealed hands</span><span>{reveals.length} / {room.players.length}</span></div>
+        <div className="hand-topline"><span><Eye size={15}/> Mains révélées</span><span>{reveals.length} / {room.players.length}</span></div>
         {reveals.map((reveal, index) => {
           const player = room.players.find((candidate) => candidate.id === reveal.playerId)
           const privateCards = player?.cards ?? reveal.cards.slice(0, reveal.cards.length - board.length)
           return <div className="revealed-hand" key={`${reveal.playerId}-${index}`}>
-            <span className="revealed-player">{index + 1}. {player?.name ?? 'Player'} <strong>{reveal.category}</strong></span>
+            <span className="revealed-player">{index + 1}. {player?.name ?? 'Joueur'} <strong>{reveal.category}</strong></span>
             <div className="reveal-cards">{privateCards.map((card) => <Card value={card} small key={card}/>)}</div>
           </div>
         })}
       </div>
-      <div className="showdown-board"><span>SHARED BOARD</span>{board.map((card) => <Card value={card} small key={`board-${card}`}/>)}</div>
+      <div className="showdown-board"><span>TABLEAU COMMUN</span>{board.map((card) => <Card value={card} small key={`board-${card}`}/>)}</div>
       <TokenHistory room={room}/>
       <GameLogPanel code={room.code} playerId={playerId} finished={room.status === 'finished'} />
       {error && <p className="error-message" role="alert">{error}</p>}
@@ -280,28 +280,28 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
   if (room.phase === 'challenge') {
     const highestPlayer = room.players.find((player) => player.tokenPicks?.some((pick) => pick.round === 4 && pick.value === room.players.length))
     const isRankCheck = currentChallengeCheck === 4
-    const categories = ['High card', 'One pair', 'Two pair', 'Three of a kind', 'Straight', 'Flush', 'Full house', 'Four of a kind', 'Straight flush']
+    const categories = ['Carte haute', 'Paire', 'Double paire', 'Brelan', 'Quinte', 'Couleur', 'Full', 'Carré', 'Quinte flush']
     return <section className={`hand-panel game-flow-panel ${displayMode === 'real' ? 'real-mode' : 'text-mode'}`}>
       {viewModeToggle}
       {!isReal && <ActiveChallengeFab cards={activeChallenges}/>}
       {realTable}
-      <div className="hand-topline"><span><Eye size={15}/> Security check</span><span>{completedChecks.length + 1} / {(room.challengeChecks ?? []).length}</span></div>
+      <div className="hand-topline"><span><Eye size={15}/> Contrôle de sécurité</span><span>{completedChecks.length + 1} / {(room.challengeChecks ?? []).length}</span></div>
       <div className="scanner-check">
         <span className="section-kicker">{challengeNames[(currentChallengeCheck ?? 4) - 1]}</span>
-        <h2>{isRankCheck ? <>Beat the <em>retina scan.</em></> : <>Beat the <em>fingerprint scan.</em></>}</h2>
-        <p>{isRankCheck ? `Which card value is in ${highestPlayer?.name ?? 'the highest red-token player’s'} private hand?` : `What is ${highestPlayer?.name ?? 'the highest red-token player’s'} best poker hand?`}</p>
-        <label className="guess-picker">The crew’s guess
+        <h2>{isRankCheck ? <>Déjouez le <em>scanner rétinien.</em></> : <>Déjouez le <em>scanner d’empreintes.</em></>}</h2>
+        <p>{isRankCheck ? `Quelle valeur de carte se trouve dans la main privée ${highestPlayer ? 'de ' + highestPlayer.name : 'du joueur au plus haut jeton rouge'} ?` : `Quelle est la meilleure combinaison ${highestPlayer ? 'de ' + highestPlayer.name : 'du joueur au plus haut jeton rouge'} ?`}</p>
+        <label className="guess-picker">La proposition de la bande
           <select value={guess} onChange={(event) => setGuess(event.target.value)}>
-            <option value="">Choose an answer</option>
+            <option value="">Choisissez une réponse</option>
             {isRankCheck
-              ? Array.from({ length: 13 }, (_, index) => index + 2).map((value) => <option value={value} key={value}>{value === 14 ? 'Ace' : ranks[value - 1]}</option>)
+              ? Array.from({ length: 13 }, (_, index) => index + 2).map((value) => <option value={value} key={value}>{value === 14 ? 'As' : value === 13 ? 'Roi' : value === 12 ? 'Dame' : value === 11 ? 'Valet' : ranks[value - 1]}</option>)
               : categories.map((category, index) => <option value={index} key={category}>{category}</option>)}
           </select>
         </label>
-        <button className="button button-primary full-button" disabled={!isHost || busy || guess === ''} onClick={() => void run(() => submitChallengeGuess({ code: room.code, playerId, guess: Number(guess) }))}>{busy ? <LoaderCircle className="spin" size={16}/> : <Check size={16}/>} {isHost ? 'Lock in the crew’s guess' : 'Waiting for the host'}</button>
-        <p className="guess-hint">Talk it through together, then the host locks in one answer. A wrong guess triggers an alarm.</p>
+        <button className="button button-primary full-button" disabled={!isHost || busy || guess === ''} onClick={() => void run(() => submitChallengeGuess({ code: room.code, playerId, guess: Number(guess) }))}>{busy ? <LoaderCircle className="spin" size={16}/> : <Check size={16}/>} {isHost ? 'Valider la proposition' : 'En attente de l’hôte'}</button>
+        <p className="guess-hint">Discutez-en ensemble, puis l’hôte valide une réponse. Une mauvaise réponse déclenche une alarme.</p>
       </div>
-      <div className="showdown-board"><span>SHARED BOARD</span>{board.map((card) => <Card value={card} small key={`board-${card}`}/>)}</div>
+      <div className="showdown-board"><span>TABLEAU COMMUN</span>{board.map((card) => <Card value={card} small key={`board-${card}`}/>)}</div>
       <TokenHistory room={room}/>
       <GameLogPanel code={room.code} playerId={playerId} finished={room.status === 'finished'} />
       {error && <p className="error-message" role="alert">{error}</p>}
@@ -313,21 +313,21 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
       {viewModeToggle}
       {!isReal && <ActiveChallengeFab cards={activeChallenges}/>}
       {realTable}
-      <div className="hand-topline"><span><Eye size={15}/> The showdown</span><span>Lowest token first</span></div>
-      <div className="community-row" aria-label="Community cards">{board.map((card) => <Card value={card} small key={card}/>)}</div>
+      <div className="hand-topline"><span><Eye size={15}/> L’abattage</span><span>Du plus petit jeton au plus grand</span></div>
+      <div className="community-row" aria-label="Cartes communes">{board.map((card) => <Card value={card} small key={card}/>)}</div>
       <div className="reveal-next-card">
-        {nextPlayer ? <><span className="section-kicker">NEXT UP · {reveals.length + 1} OF {room.players.length}</span><h2>{canRevealHand ? <>Your hand is <em>up.</em></> : <>{nextPlayer.name} is <em>up.</em></>}</h2><p>Reveal in token order. The table must climb every time.</p></> : <><span className="section-kicker">SHOWDOWN COMPLETE</span><h2>The order is <em>set.</em></h2></>}
+        {nextPlayer ? <><span className="section-kicker">AU SUIVANT · {reveals.length + 1} SUR {room.players.length}</span><h2>{canRevealHand ? <>À vous de <em>jouer.</em></> : <>Au tour de <em>{nextPlayer.name}.</em></>}</h2><p>Révélez dans l’ordre des jetons. Chaque main doit être plus forte.</p></> : <><span className="section-kicker">ABATTAGE TERMINÉ</span><h2>L’ordre est <em>établi.</em></h2></>}
         {reveals.map((reveal, index) => {
           const player = room.players.find((candidate) => candidate.id === reveal.playerId)
           const pocketCards = player?.cards ?? reveal.cards.slice(0, reveal.cards.length - board.length)
           return <div className="revealed-hand" key={`${reveal.playerId}-${index}`}>
-            <span className="revealed-player">{index + 1}. {player?.name ?? 'Player'} <strong>{reveal.category}</strong></span>
+            <span className="revealed-player">{index + 1}. {player?.name ?? 'Joueur'} <strong>{reveal.category}</strong></span>
             <div className="reveal-cards">{pocketCards.map((card) => <Card value={card} small key={card}/>)}</div>
           </div>
         })}
-        {nextPlayer && displayMode === 'text' && <button className="button button-primary full-button" disabled={!canRevealHand || busy} onClick={() => void run(() => revealNextHand({ code: room.code, playerId }))}>{busy ? <LoaderCircle className="spin" size={16}/> : <Eye size={16}/>} {canRevealHand ? 'Reveal your hand' : `Waiting for ${nextPlayer.name} to reveal`}</button>}
+        {nextPlayer && displayMode === 'text' && <button className="button button-primary full-button" disabled={!canRevealHand || busy} onClick={() => void run(() => revealNextHand({ code: room.code, playerId }))}>{busy ? <LoaderCircle className="spin" size={16}/> : <Eye size={16}/>} {canRevealHand ? 'Révéler votre main' : `En attente de la révélation de ${nextPlayer.name}`}</button>}
       </div>
-      <div className="showdown-board"><span>SHARED BOARD</span>{board.map((card) => <Card value={card} small key={`board-${card}`}/>)}</div>
+      <div className="showdown-board"><span>TABLEAU COMMUN</span>{board.map((card) => <Card value={card} small key={`board-${card}`}/>)}</div>
       <TokenHistory room={room}/>
       <GameLogPanel code={room.code} playerId={playerId} finished={room.status === 'finished'} />
       {error && <p className="error-message" role="alert">{error}</p>}
@@ -338,19 +338,19 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
     {viewModeToggle}
     {!isReal && <ActiveChallengeFab cards={activeChallenges}/>}
     {realTable}
-    <div className="hand-topline"><span><Sparkles size={15}/> Round {room.round} · {roundNames[room.round - 1] ?? 'Red'} tokens</span><span>{room.players.filter((player) => player.tokenPicks?.some((pick) => pick.round === room.round)).length} / {room.players.length} ranked</span></div>
+    <div className="hand-topline"><span><Sparkles size={15}/> Manche {room.round} · jetons {roundNames[room.round - 1] ?? 'rouges'}</span><span>{room.players.filter((player) => player.tokenPicks?.some((pick) => pick.round === room.round)).length} / {room.players.length} classés</span></div>
     {!isReal && room.activeSpecialistCard === 2 && tableModifiers}
-    {!isReal && room.activeSpecialistCard && room.activeSpecialistCard !== 2 && <div className="active-modifier-strip"><Shield size={14}/><span>Active Specialist:</span><span className="active-card-rule"><strong className="active-specialist-name">{specialistNames[room.activeSpecialistCard - 1]}</strong><small>{specialistRules[room.activeSpecialistCard - 1]}</small></span></div>}
+    {!isReal && room.activeSpecialistCard && room.activeSpecialistCard !== 2 && <div className="active-modifier-strip"><Shield size={14}/><span>Spécialiste actif :</span><span className="active-card-rule"><strong className="active-specialist-name">{specialistNames[room.activeSpecialistCard - 1]}</strong><small>{specialistRules[room.activeSpecialistCard - 1]}</small></span></div>}
     {stealNotice && dismissedStealNoticeAt !== stealNotice.createdAt && <div className="token-stolen-toast" role="alert" aria-live="assertive">
-      <span><strong>Your token was stolen</strong>Token {stealNotice.value} was taken by {stealNotice.thiefName}. Choose another to stay in the round.</span>
-      <button type="button" aria-label="Dismiss token stolen notification" onClick={() => setDismissedStealNoticeAt(stealNotice.createdAt)}>×</button>
+      <span><strong>Votre jeton a été volé</strong>Le jeton {stealNotice.value} a été pris par {stealNotice.thiefName}. Choisissez-en un autre pour rester dans la manche.</span>
+      <button type="button" aria-label="Fermer la notification de jeton volé" onClick={() => setDismissedStealNoticeAt(stealNotice.createdAt)}>×</button>
     </div>}
     <p className="round-guidance">{stageMessage}</p>
     <div className="game-table-row">
-      {me?.cards.length ? <div className="private-hand"><span>YOUR PRIVATE CARDS <small>keep these to yourself</small></span><div>{me.cards.map((card) => <Card value={card} key={card}/>)}</div></div> : <div className="private-hand private-hand-empty"><span>YOUR PRIVATE CARDS</span><span>Cards are dealt at the start of the heist.</span></div>}
+      {me?.cards.length ? <div className="private-hand"><span>VOS CARTES PRIVÉES <small>gardez-les pour vous</small></span><div>{me.cards.map((card) => <Card value={card} key={card}/>)}</div></div> : <div className="private-hand private-hand-empty"><span>VOS CARTES PRIVÉES</span><span>Les cartes sont distribuées au début du casse.</span></div>}
       <div className="public-board">
-        <div className="board-caption"><span>SHARED BOARD</span><span>{board.length ? `${board.length} of 5 cards` : 'The flop is coming after this round'}</span></div>
-        <div className="community-row">{board.length ? board.map((card) => <Card value={card} small key={card}/>) : <span className="board-placeholder">Community cards appear here for everyone.</span>}</div>
+        <div className="board-caption"><span>TABLEAU COMMUN</span><span>{board.length ? `${board.length} cartes sur 5` : 'Le flop arrive après cette manche'}</span></div>
+        <div className="community-row">{board.length ? board.map((card) => <Card value={card} small key={card}/>) : <span className="board-placeholder">Les cartes communes apparaissent ici pour tout le monde.</span>}</div>
       </div>
     </div>
     {displayMode === 'text' && tokenPicker}
