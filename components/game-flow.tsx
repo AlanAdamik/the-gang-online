@@ -6,7 +6,8 @@ import { api } from '../convex/_generated/api'
 import { Card } from './playing-card'
 import { RealCasinoTable } from './real-casino-table'
 import { GameLogPanel } from './game-log'
-import { Check, Eye, Flame, LoaderCircle, Shield, Sparkles } from 'lucide-react'
+import { ShowdownHands } from './showdown-hands'
+import { Check, Eye, Flame, LoaderCircle, RotateCcw, Shield, Sparkles } from 'lucide-react'
 
 type GameFlowProps = {
   room: {
@@ -157,6 +158,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
   const submitChallengeGuess = useMutation(api.rooms.submitChallengeGuess)
   const startNextHeist = useMutation(api.rooms.startNextHeist)
   const revealHandRanking = useMutation(api.rooms.revealHandRanking)
+  const restartGame = useMutation(api.rooms.restartGame)
   const isHost = room.hostId === playerId
   const me = room.players.find((player) => player.id === playerId)
   const currentPick = me?.tokenPicks?.find((pick) => pick.round === room.round)
@@ -203,7 +205,10 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
   const nextHeistButton = room.phase === 'result' && room.status === 'playing'
     ? <button className="button button-primary full-button next-heist-button" disabled={!isHost || busy} onClick={() => void run(() => startNextHeist({ code: room.code, playerId }))}>{busy ? <LoaderCircle className="spin" size={16}/> : <Sparkles size={16}/>} {isHost ? 'Distribuer le prochain casse' : 'En attente de l’hôte'} </button>
     : null
-  const realTable = isReal ? <RealCasinoTable players={room.players} board={board} playerId={playerId} phase={room.phase} reveals={reveals} nextPlayerId={nextPlayer?.id} burningCard={burningCard} tokenPicker={tokenPicker} modifiers={tableModifiers} tableAction={nextHeistButton} revealBusy={busy} onRevealHand={() => void run(() => revealNextHand({ code: room.code, playerId }))}/> : null
+  const restartButton = room.status === 'finished'
+    ? <button className="button button-primary full-button next-heist-button" disabled={!isHost || busy} onClick={() => void run(() => restartGame({ code: room.code, playerId }))}>{busy ? <LoaderCircle className="spin" size={16}/> : <RotateCcw size={16}/>} {isHost ? 'Nouvelle partie' : 'En attente de l’hôte pour rejouer'}</button>
+    : null
+  const realTable = isReal ? <RealCasinoTable players={room.players} board={board} playerId={playerId} phase={room.phase} reveals={reveals} outcome={room.outcome} gameOver={room.status === 'finished'} nextPlayerId={nextPlayer?.id} burningCard={burningCard} tokenPicker={tokenPicker} modifiers={tableModifiers} tableAction={nextHeistButton ?? restartButton} revealBusy={busy} onRevealHand={() => void run(() => revealNextHand({ code: room.code, playerId }))}/> : null
   const completedChecks = room.completedChallengeChecks ?? []
   const currentChallengeCheck = (room.challengeChecks ?? []).find((id) => !completedChecks.includes(id))
 
@@ -257,19 +262,12 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
           {room.pendingChallengeCard && <div className="modifier-card challenge-card"><span><Flame size={15}/> DÉFI VERT</span><strong>{challengeNames[room.pendingChallengeCard - 1]}</strong><p>{challengeRules[room.pendingChallengeCard - 1]}</p></div>}
           {room.activeSpecialistCard && <div className="modifier-card specialist-card"><span><Shield size={15}/> SPÉCIALISTE ACTIF</span><strong>{specialistNames[room.activeSpecialistCard - 1]}</strong><p>{specialistRules[room.activeSpecialistCard - 1]}</p></div>}
         </div>}
-        {!isReal && nextHeistButton}
+        {!isReal && (nextHeistButton ?? restartButton)}
       </div>
-      <div className="reveal-history">
+      {!isReal && <div className="reveal-history">
         <div className="hand-topline"><span><Eye size={15}/> Mains révélées</span><span>{reveals.length} / {room.players.length}</span></div>
-        {reveals.map((reveal, index) => {
-          const player = room.players.find((candidate) => candidate.id === reveal.playerId)
-          const privateCards = player?.cards ?? reveal.cards.slice(0, reveal.cards.length - board.length)
-          return <div className="revealed-hand" key={`${reveal.playerId}-${index}`}>
-            <span className="revealed-player">{index + 1}. {player?.name ?? 'Joueur'} <strong>{reveal.category}</strong></span>
-            <div className="reveal-cards">{privateCards.map((card) => <Card value={card} small key={card}/>)}</div>
-          </div>
-        })}
-      </div>
+        <ShowdownHands reveals={reveals} players={room.players} boardSize={board.length} variant="panel"/>
+      </div>}
       <div className="showdown-board"><span>TABLEAU COMMUN</span>{board.map((card) => <Card value={card} small key={`board-${card}`}/>)}</div>
       <TokenHistory room={room}/>
       <GameLogPanel code={room.code} playerId={playerId} finished={room.status === 'finished'} />
@@ -317,14 +315,7 @@ export function GameFlow({ room, playerId }: GameFlowProps) {
       <div className="community-row" aria-label="Cartes communes">{board.map((card) => <Card value={card} small key={card}/>)}</div>
       <div className="reveal-next-card">
         {nextPlayer ? <><span className="section-kicker">AU SUIVANT · {reveals.length + 1} SUR {room.players.length}</span><h2>{canRevealHand ? <>À vous de <em>jouer.</em></> : <>Au tour de <em>{nextPlayer.name}.</em></>}</h2><p>Révélez dans l’ordre des jetons. Chaque main doit être plus forte.</p></> : <><span className="section-kicker">ABATTAGE TERMINÉ</span><h2>L’ordre est <em>établi.</em></h2></>}
-        {reveals.map((reveal, index) => {
-          const player = room.players.find((candidate) => candidate.id === reveal.playerId)
-          const pocketCards = player?.cards ?? reveal.cards.slice(0, reveal.cards.length - board.length)
-          return <div className="revealed-hand" key={`${reveal.playerId}-${index}`}>
-            <span className="revealed-player">{index + 1}. {player?.name ?? 'Joueur'} <strong>{reveal.category}</strong></span>
-            <div className="reveal-cards">{pocketCards.map((card) => <Card value={card} small key={card}/>)}</div>
-          </div>
-        })}
+        {!isReal && <ShowdownHands reveals={reveals} players={room.players} boardSize={board.length} variant="panel"/>}
         {nextPlayer && displayMode === 'text' && <button className="button button-primary full-button" disabled={!canRevealHand || busy} onClick={() => void run(() => revealNextHand({ code: room.code, playerId }))}>{busy ? <LoaderCircle className="spin" size={16}/> : <Eye size={16}/>} {canRevealHand ? 'Révéler votre main' : `En attente de la révélation de ${nextPlayer.name}`}</button>}
       </div>
       <div className="showdown-board"><span>TABLEAU COMMUN</span>{board.map((card) => <Card value={card} small key={`board-${card}`}/>)}</div>
