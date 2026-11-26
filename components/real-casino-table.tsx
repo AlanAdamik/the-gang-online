@@ -40,6 +40,20 @@ type RealCasinoTableProps = {
   tableAction?: ReactNode
   revealBusy: boolean
   onRevealHand: () => void
+  notices?: ReactNode
+  scoreboard?: ReactNode
+  lockedTokenForRound?: (round: number) => number | null
+}
+
+function SeatTokens({ player, label, lockedTokenForRound }: { player: CasinoPlayer; label: string; lockedTokenForRound?: (round: number) => number | null }) {
+  return <div className="casino-seat-token-history" aria-label={label}>
+    {(player.tokenPicks ?? []).slice().sort((a, b) => a.round - b.round).map((token) => {
+      const locked = lockedTokenForRound?.(token.round) === token.value
+      return <span className={`casino-seat-history-chip chip-${roundColors[token.round - 1] ?? 'red'} ${locked ? 'is-locked' : ''}`} key={`${player.id}-${token.round}`} aria-label={`Manche ${token.round}, jeton ${token.value}${locked ? ', verrouillé' : ''}`} title={`Manche ${token.round}${locked ? ' · verrouillé' : ''}`}>
+        {token.value}
+      </span>
+    })}
+  </div>
 }
 
 const roundColors = ['white', 'yellow', 'orange', 'red']
@@ -55,7 +69,7 @@ function CardBack() {
   return <div className="casino-card-back" aria-label="Carte face cachée"><span>✳</span></div>
 }
 
-export function RealCasinoTable({ players, board, playerId, phase, reveals, nextPlayerId, burningCard, tokenPicker, modifiers, tableAction, revealBusy, onRevealHand, outcome, gameOver = false }: RealCasinoTableProps) {
+export function RealCasinoTable({ players, board, playerId, phase, reveals, nextPlayerId, burningCard, tokenPicker, modifiers, tableAction, revealBusy, onRevealHand, outcome, gameOver = false, notices, scoreboard, lockedTokenForRound }: RealCasinoTableProps) {
   const stageRef = useRef<HTMLElement>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showRankings, setShowRankings] = useState(false)
@@ -84,6 +98,8 @@ export function RealCasinoTable({ players, board, playerId, phase, reveals, next
   const fullscreenLabel = isFullscreen ? 'Quitter le plein écran' : 'Passer en plein écran'
 
   return <section ref={stageRef} className="real-table-stage" aria-label="Table de casino en direct">
+    {notices}
+    {scoreboard && <div className="casino-table-scoreboard">{scoreboard}</div>}
     <button type="button" className="table-fullscreen-button" onClick={() => void toggleFullscreen()} aria-label={fullscreenLabel} title={fullscreenLabel}>
       {isFullscreen ? <Minimize size={17}/> : <Maximize size={17}/>}
     </button>
@@ -117,11 +133,7 @@ export function RealCasinoTable({ players, board, playerId, phase, reveals, next
               : <CardBack key={`${player.id}-back-${cardIndex}`}/>
             )}
           </div>
-          <div className="casino-seat-token-history" aria-label={`Jetons de ${player.name} par manche`}>
-            {(player.tokenPicks ?? []).slice().sort((a, b) => a.round - b.round).map((token) => <span className={`casino-seat-history-chip chip-${roundColors[token.round - 1] ?? 'red'}`} key={`${player.id}-${token.round}`} aria-label={`Manche ${token.round}, jeton ${token.value}`} title={`Manche ${token.round}`}>
-              {token.value}
-            </span>)}
-          </div>
+          <SeatTokens player={player} label={`Jetons de ${player.name} par manche`} lockedTokenForRound={lockedTokenForRound}/>
         </article>
       })}
 
@@ -135,11 +147,7 @@ export function RealCasinoTable({ players, board, playerId, phase, reveals, next
           <div className={`casino-pocket-cards casino-pocket-cards-own ${hasRevealed ? 'casino-pocket-cards-revealed' : ''}`} aria-label={hasRevealed ? 'Vos cartes sont affichées au centre de la table' : 'Vos cartes privées'}>
             {hasRevealed ? [0, 1].map((cardIndex) => <CardBack key={`${me.id}-back-${cardIndex}`}/>) : me.cards.map((value, cardIndex) => <Card key={`${me.id}-card-${cardIndex}-${value}`} value={value} small/>)}
           </div>
-          <div className="casino-seat-token-history" aria-label="Vos jetons par manche">
-            {(me.tokenPicks ?? []).slice().sort((a, b) => a.round - b.round).map((token) => <span className={`casino-seat-history-chip chip-${roundColors[token.round - 1] ?? 'red'}`} key={`${me.id}-${token.round}`} aria-label={`Manche ${token.round}, jeton ${token.value}`} title={`Manche ${token.round}`}>
-              {token.value}
-            </span>)}
-          </div>
+          <SeatTokens player={me} label="Vos jetons par manche" lockedTokenForRound={lockedTokenForRound}/>
           {phase === 'reveal' && nextPlayerId === me.id && <button type="button" className="casino-reveal-button" disabled={revealBusy} onClick={onRevealHand}>
             {revealBusy ? 'Révélation…' : 'Révéler ma main'}
           </button>}
