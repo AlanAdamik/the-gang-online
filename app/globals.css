@@ -657,7 +657,8 @@ button.game-log-event { cursor: pointer; }
 .mini-hand-card.card-classic { font-size: 9px; }
 .casino-pocket-cards .card-classic, .casino-revealed-hand-cards .card-classic, .showdown-hands .card-classic { font-size: 7px; }
 .casino-pocket-cards-own .card-classic, .casino-board-cards .card-classic { font-size: 10px; }
-.card-classic .card-face-art { inset: 14% 16%; border: 1px solid currentColor; border-radius: 2px; overflow: hidden; background: #f6efe0; }
+.card-classic .card-corner { z-index: 2; }
+.card-classic .card-face-art { inset: 7% 1.6em; border: 1px solid currentColor; border-radius: 2px; overflow: hidden; background: #f6efe0; }
 .card-classic .card-face-art img { object-fit: cover; }
 .card-classic .card-face-suit { position: absolute; z-index: 1; top: 2px; right: 3px; font-size: 1.2em; line-height: 1; text-shadow: 0 0 3px #fffdf7, 0 0 3px #fffdf7; }
 
