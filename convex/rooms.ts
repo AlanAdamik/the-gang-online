@@ -193,8 +193,9 @@ function bestHand(cards: number[]) {
   return best
 }
 
+// Getaway Driver reveals only the ranking category; including the high card or kickers would leak private cards.
 function currentHandCategory(cards: number[]) {
-  if (cards.length >= 5) return bestHand(cards).label
+  if (cards.length >= 5) return bestHand(cards).category
   const counts = new Map<number, number>()
   for (const card of cards) {
     const rank = ((card - 1) % 13) + 1
@@ -205,7 +206,7 @@ function currentHandCategory(cards: number[]) {
   if (sizes[0] === 3) return 'Three of a kind'
   if (sizes[0] === 2 && sizes[1] === 2) return 'Two pair'
   if (sizes[0] === 2) return 'One pair'
-  return highCardLabel([...counts.keys()].sort((a, b) => b - a))
+  return 'High card'
 }
 
 function handSize(room: { activeChallengeCards?: number[] }) {
