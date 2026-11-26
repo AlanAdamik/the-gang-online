@@ -17,6 +17,9 @@ const revealValidator = v.object({
   cards: v.array(v.number()),
   category: v.string(),
   score: v.number(),
+  bestCards: v.optional(v.array(v.number())),
+  tripped: v.optional(v.boolean()),
+  afterAlarm: v.optional(v.boolean()),
 })
 const roomValidator = v.object({
   _id: v.id('rooms'),
@@ -165,7 +168,14 @@ function scoreFiveCards(cards: number[]) {
   const score = category * 15 ** 5 + padded.reduce((value, rank) => value * 15 + rank, 0)
   const categories = ['Carte haute', 'Paire', 'Double paire', 'Brelan', 'Quinte', 'Couleur', 'Full', 'Carré', 'Quinte flush']
   const label = category === 0 ? highCardLabel(uniqueRanks) : categories[category]
-  return { score, category: categories[category], label }
+  const highRank = (card: number) => {
+    const rank = ((card - 1) % 13) + 1
+    return rank === 1 ? 14 : rank
+  }
+  const displayRank = (card: number) => straightHigh === 5 && highRank(card) === 14 ? 1 : highRank(card)
+  const ordered = [...cards].sort((a, b) =>
+    (counts.get(highRank(b)) ?? 0) - (counts.get(highRank(a)) ?? 0) || displayRank(b) - displayRank(a))
+  return { score, category: categories[category], label, cards: ordered }
 }
 
 function rankName(rank: number) {
@@ -177,7 +187,7 @@ function highCardLabel(ranksHighToLow: number[]) {
 }
 
 function bestHand(cards: number[]) {
-  let best = { score: -1, category: 'Carte haute', label: 'Carte haute' }
+  let best: { score: number; category: string; label: string; cards: number[] } = { score: -1, category: 'Carte haute', label: 'Carte haute', cards: [] }
   for (let a = 0; a < cards.length - 4; a += 1) {
     for (let b = a + 1; b < cards.length - 3; b += 1) {
       for (let c = b + 1; c < cards.length - 2; c += 1) {
@@ -207,6 +217,40 @@ function currentHandCategory(cards: number[]) {
   if (sizes[0] === 2 && sizes[1] === 2) return 'Double paire'
   if (sizes[0] === 2) return 'Paire'
   return 'Carte haute'
+}
+
+type Reveal = { playerId: string; cards: number[]; category: string; score: number; bestCards?: number[]; tripped?: boolean; afterAlarm?: boolean }
+
+function buildReveal(player: { id: string; cards: number[] }, communityCards: number[]): Reveal {
+  const cards = [...(player.cards ?? []), ...communityCards]
+  const hand = bestHand(cards)
+  return { playerId: player.id, cards, category: hand.label, score: hand.score, bestCards: hand.cards }
+}
+
+// Once the heist has failed, the showdown is over: every remaining hand is laid on the table in token order.
+async function revealRemainingHands(
+  ctx: MutationCtx,
+  room: { players: { id: string; name: string; cards: number[] }[]; revealOrder?: string[]; communityCards?: number[]; gameLogId?: Id<'gameLogs'>; round: number },
+  reveals: Reveal[],
+) {
+  const revealedIds = new Set(reveals.map((reveal) => reveal.playerId))
+  const remaining: Reveal[] = []
+  for (const id of room.revealOrder ?? []) {
+    if (revealedIds.has(id)) continue
+    const player = room.players.find((entry) => entry.id === id)
+    if (!player) continue
+    const reveal = { ...buildReveal(player, room.communityCards ?? []), afterAlarm: true }
+    remaining.push(reveal)
+    await recordGameEvent(ctx, room.gameLogId, 'hand_revealed', {
+      round: room.round,
+      playerId: id,
+      playerName: player.name,
+      cards: reveal.cards,
+      category: reveal.category,
+      note: 'révélée après l’alarme',
+    })
+  }
+  return [...reveals, ...remaining]
 }
 
 function handSize(room: { activeChallengeCards?: number[] }) {
@@ -691,8 +735,10 @@ export const submitChallengeGuess = mutation({
     const limit = room.mode === 'master-thief' ? 2 : 3
     const challengeDraw = room.mode === 'master-thief' ? drawChallengeCard(room.challengeDeck, 'master-thief', room.activeChallengeCards ?? []) : null
     const specialistDraw = room.mode === 'master-thief' ? null : drawSpecialistCard(room.specialistDeck)
+    const revealedAfterAlarm = await revealRemainingHands(ctx, room, room.reveals ?? [])
     await recordHeistOutcome(ctx, room.gameLogId, room.round, 'failed', alarms, alarms >= limit)
     await ctx.db.patch(room._id, {
+      reveals: revealedAfterAlarm,
       phase: 'result',
       outcome: 'failed',
       alarms,
@@ -720,26 +766,26 @@ export const revealNextHand = mutation({
   if (nextId !== playerId) throw new Error('Ce n’est pas à vous de révéler votre main.')
     const player = room.players.find((entry: { id: string }) => entry.id === nextId)
     if (!player) throw new Error('Ce joueur n’est plus à la table.')
-    const hand = bestHand([...(player.cards ?? []), ...(room.communityCards ?? [])])
-    const reveal = { playerId: nextId, cards: [...(player.cards ?? []), ...(room.communityCards ?? [])], category: hand.label, score: hand.score }
+    const reveal = buildReveal(player, room.communityCards ?? [])
     const updatedReveals = [...reveals, reveal]
     await recordGameEvent(ctx, room.gameLogId, 'hand_revealed', {
       round: room.round,
       playerId: nextId,
       playerName: player.name,
       cards: reveal.cards,
-      category: hand.label,
+      category: reveal.category,
     })
     const previous = reveals[reveals.length - 1]
     // Equal hands may be revealed in either order; only a strictly weaker hand trips the alarm.
-    if (previous && hand.score < previous.score) {
+    if (previous && reveal.score < previous.score) {
       const alarms = (room.alarms ?? 0) + 1
       const limit = room.mode === 'master-thief' ? 2 : 3
       const challengeDraw = room.mode === 'master-thief' ? drawChallengeCard(room.challengeDeck, 'master-thief', room.activeChallengeCards ?? []) : null
       const specialistDraw = room.mode === 'master-thief' ? null : drawSpecialistCard(room.specialistDeck)
+      const allReveals = await revealRemainingHands(ctx, room, [...reveals, { ...reveal, tripped: true }])
       await recordHeistOutcome(ctx, room.gameLogId, room.round, 'failed', alarms, alarms >= limit)
       await ctx.db.patch(room._id, {
-        reveals: updatedReveals,
+        reveals: allReveals,
         phase: 'result',
         outcome: 'failed',
         alarms,
@@ -862,6 +908,42 @@ export const revealHandRanking = mutation({
     const category = currentHandCategory([...(player.cards ?? []), ...(room.communityCards ?? [])])
     await ctx.db.patch(room._id, { specialistUse: { card: 2, playerId, playerName: player.name, round: room.round, category } })
     await recordGameEvent(ctx, room.gameLogId, 'specialist_used', { round: room.round, playerId, playerName: player.name, specialistCard: 2, category })
+    return null
+  },
+})
+
+export const restartGame = mutation({
+  args: { code: v.string(), playerId: v.string() },
+  returns: v.null(),
+  handler: async (ctx, { code, playerId }) => {
+    const room = await getRoomByCode(ctx, code)
+    if (!room || room.hostId !== playerId) throw new Error('Seul l’hôte peut lancer une nouvelle partie.')
+    if (room.status !== 'finished') throw new Error('La partie en cours n’est pas encore terminée.')
+    await ctx.db.patch(room._id, {
+      status: 'lobby',
+      round: 1,
+      players: room.players.map((player) => ({ ...player, ready: true, cards: [], tokenPicks: [] })),
+      phase: undefined,
+      deck: undefined,
+      communityCards: [],
+      revealOrder: [],
+      reveals: [],
+      outcome: undefined,
+      alarms: 0,
+      activeChallengeCards: [],
+      permanentChallengeCard: undefined,
+      pendingChallengeCard: undefined,
+      activeSpecialistCard: undefined,
+      pendingSpecialistCard: undefined,
+      challengeDeck: undefined,
+      specialistDeck: undefined,
+      challengeChecks: [],
+      completedChallengeChecks: [],
+      tokenStealNotice: undefined,
+      tokenHistory: [],
+      specialistUse: undefined,
+      gameLogId: undefined,
+    })
     return null
   },
 })

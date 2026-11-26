@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { HelpCircle, Maximize, Minimize, X } from 'lucide-react'
+import { HelpCircle, LockOpen, Maximize, Minimize, Siren, X } from 'lucide-react'
 import { Card } from './playing-card'
+import { ShowdownHands, type ShowdownReveal } from './showdown-hands'
 
 const handRankings: [string, string][] = [
   ['Quinte flush', '5 cartes qui se suivent, même couleur'],
@@ -29,7 +30,9 @@ type RealCasinoTableProps = {
   board: number[]
   playerId: string
   phase?: 'ranking' | 'challenge' | 'reveal' | 'result'
-  reveals: { playerId: string; cards: number[]; category: string; score: number }[]
+  reveals: ShowdownReveal[]
+  outcome?: 'success' | 'failed'
+  gameOver?: boolean
   nextPlayerId?: string
   burningCard: boolean
   tokenPicker?: ReactNode
@@ -52,7 +55,7 @@ function CardBack() {
   return <div className="casino-card-back" aria-label="Carte face cachée"><span>✳</span></div>
 }
 
-export function RealCasinoTable({ players, board, playerId, phase, reveals, nextPlayerId, burningCard, tokenPicker, modifiers, tableAction, revealBusy, onRevealHand }: RealCasinoTableProps) {
+export function RealCasinoTable({ players, board, playerId, phase, reveals, nextPlayerId, burningCard, tokenPicker, modifiers, tableAction, revealBusy, onRevealHand, outcome, gameOver = false }: RealCasinoTableProps) {
   const stageRef = useRef<HTMLElement>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showRankings, setShowRankings] = useState(false)
@@ -97,7 +100,7 @@ export function RealCasinoTable({ players, board, playerId, phase, reveals, next
       </ol>
       <p>La plus forte en haut. Les égalités se départagent par la valeur des cartes (kickers) ; deux mains égales peuvent être dans n’importe quel ordre.</p>
     </div>}
-    <div className={`casino-table-surface ${tokenPicker ? 'casino-table-surface-picking' : ''}`}>
+    <div className={`casino-table-surface ${tokenPicker ? 'casino-table-surface-picking' : ''} ${phase === 'result' && outcome ? `casino-table-surface-${outcome}` : ''}`}>
       <div className="casino-table-felt" aria-hidden="true" />
       {opponents.map((player, index) => {
         const position = opponentSeats[Math.floor(index * opponentSeats.length / Math.max(opponents.length, 1))]
@@ -149,19 +152,15 @@ export function RealCasinoTable({ players, board, playerId, phase, reveals, next
           {board.length ? board.map((card, index) => <div className="casino-dealt-card" key={card} style={{ animationDelay: `${index * 85}ms` }}><Card value={card} small/></div>) : <span className="casino-board-empty">{phase === 'ranking' ? 'Les premières cartes vont bientôt tomber sur le tapis' : 'Le tableau apparaîtra ici'}</span>}
         </div>
         <span className="casino-board-count">{board.length} / 5 CARTES</span>
-        {(phase === 'reveal' || phase === 'result') && reveals.length > 0 && <div className="casino-revealed-hands" aria-label={`${reveals.length} ${reveals.length === 1 ? 'main révélée' : 'mains révélées'}`}>
-          {reveals.map((reveal, index) => {
-            const player = players.find((candidate) => candidate.id === reveal.playerId)
-            const privateCards = reveal.cards.slice(0, reveal.cards.length - board.length)
-            return <article className="casino-revealed-hand" key={`${reveal.playerId}-${index}`} aria-label={`${player?.name ?? 'Joueur'}, ${reveal.category}`}>
-              <div className="casino-revealed-hand-meta"><span>{player?.name ?? 'Joueur'}</span><strong>{reveal.category}</strong></div>
-              <div className="casino-revealed-hand-cards">{privateCards.map((card, cardIndex) => <Card key={`${reveal.playerId}-${cardIndex}-${card}`} value={card} small/>)}</div>
-            </article>
-          })}
-        </div>}
+        {(phase === 'reveal' || phase === 'result') && <ShowdownHands reveals={reveals} players={players} boardSize={board.length} variant="table"/>}
         {tableAction && <div className="casino-table-action">{tableAction}</div>}
         {burningCard && <div className="casino-burn-card" aria-hidden="true"><CardBack/></div>}
       </div>
+      {phase === 'result' && outcome && <div className={`heist-outcome-burst ${outcome === 'success' ? 'is-success' : 'is-failed'}`} role="status" aria-live="polite">
+        <span className="heist-outcome-icon">{outcome === 'success' ? <LockOpen size={30} aria-hidden="true"/> : <Siren size={30} aria-hidden="true"/>}</span>
+        <strong>{outcome === 'success' ? 'Coffre ouvert' : gameOver ? 'Démasqués' : 'Alarme !'}</strong>
+        <span>{outcome === 'success' ? 'Le casse est réussi' : gameOver ? 'Limite d’alarmes atteinte — partie terminée' : 'L’ordre des mains est rompu'}</span>
+      </div>}
       {tokenPicker && <div className="casino-table-token-picker">{tokenPicker}</div>}
       {modifiers && <div className="casino-table-modifiers">{modifiers}</div>}
     </div>

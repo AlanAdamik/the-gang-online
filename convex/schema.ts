@@ -25,6 +25,9 @@ const reveal = v.object({
   cards: v.array(v.number()),
   category: v.string(),
   score: v.number(),
+  bestCards: v.optional(v.array(v.number())),
+  tripped: v.optional(v.boolean()),
+  afterAlarm: v.optional(v.boolean()),
 })
 
 const tokenStealNotice = v.object({
