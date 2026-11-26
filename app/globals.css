@@ -684,7 +684,8 @@ button.game-log-event { cursor: pointer; }
 .heist-score-alarms { color: #a34d40; }
 .heist-score-alarms i { width: 9px; height: 9px; border: 1px solid #a34d40; border-radius: 50%; }
 .heist-score-alarms i.is-on { background: #c7392b; box-shadow: 0 0 6px #e06a55; }
-.casino-table-scoreboard { position: absolute; z-index: 6; top: 14px; right: 14px; }
+.casino-table-scoreboard { position: absolute; z-index: 6; top: 14px; right: 106px; }
+@media (max-width: 960px) { .casino-table-scoreboard { top: 60px; right: 14px; } }
 .heist-score-table { border-color: #d4bd8a80; color: #f6e9c9; background: #10292ae6; box-shadow: 0 6px 18px #0000004d; }
 .heist-score-table .heist-score-stage > span { color: #cdbb93; }
 .heist-score-table .heist-score-wins { color: #8fd6ad; }
@@ -694,4 +695,7 @@ button.game-log-event { cursor: pointer; }
 
 /* Toasts inside the table so they remain visible in fullscreen */
 .token-steal-success-toast { border-color: #1d493c; background: #1d6a4a; }
-.token-stolen-toast.is-stacked { top: 112px; }
+.token-stolen-toast { top: auto; left: auto; right: 18px; bottom: 18px; transform: none; animation-name: token-toast-enter-corner; }
+.token-stolen-toast.is-stacked { top: auto; bottom: 132px; }
+@keyframes token-toast-enter-corner { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 640px) { .token-stolen-toast { right: 14px; bottom: 14px; } }
