@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { HelpCircle, LockOpen, Maximize, Minimize, Siren, X } from 'lucide-react'
 import { Card } from './playing-card'
 import { ShowdownHands, type ShowdownReveal } from './showdown-hands'
+import { TokenFlightLayer, seatAnchor, useTokenFlights } from './token-flights'
 
 const handRankings: [string, string][] = [
   ['Quinte flush', '5 cartes qui se suivent, même couleur'],
@@ -43,13 +44,14 @@ type RealCasinoTableProps = {
   notices?: ReactNode
   scoreboard?: ReactNode
   lockedTokenForRound?: (round: number) => number | null
+  round?: number
 }
 
 function SeatTokens({ player, label, lockedTokenForRound }: { player: CasinoPlayer; label: string; lockedTokenForRound?: (round: number) => number | null }) {
-  return <div className="casino-seat-token-history" aria-label={label}>
+  return <div className="casino-seat-token-history" aria-label={label} data-token-anchor={seatAnchor(player.id)}>
     {(player.tokenPicks ?? []).slice().sort((a, b) => a.round - b.round).map((token) => {
       const locked = lockedTokenForRound?.(token.round) === token.value
-      return <span className={`casino-seat-history-chip chip-${roundColors[token.round - 1] ?? 'red'} ${locked ? 'is-locked' : ''}`} key={`${player.id}-${token.round}`} aria-label={`Manche ${token.round}, jeton ${token.value}${locked ? ', verrouillé' : ''}`} title={`Manche ${token.round}${locked ? ' · verrouillé' : ''}`}>
+      return <span className={`casino-seat-history-chip chip-${roundColors[token.round - 1] ?? 'red'} ${locked ? 'is-locked' : ''}`} key={`${player.id}-${token.round}`} data-token-anchor={seatAnchor(player.id, token.round)} aria-label={`Manche ${token.round}, jeton ${token.value}${locked ? ', verrouillé' : ''}`} title={`Manche ${token.round}${locked ? ' · verrouillé' : ''}`}>
         {token.value}
       </span>
     })}
@@ -69,8 +71,10 @@ function CardBack() {
   return <div className="casino-card-back" aria-label="Carte face cachée"><span>✳</span></div>
 }
 
-export function RealCasinoTable({ players, board, playerId, phase, reveals, nextPlayerId, burningCard, tokenPicker, modifiers, tableAction, revealBusy, onRevealHand, outcome, gameOver = false, notices, scoreboard, lockedTokenForRound }: RealCasinoTableProps) {
+export function RealCasinoTable({ players, board, playerId, phase, reveals, nextPlayerId, burningCard, tokenPicker, modifiers, tableAction, revealBusy, onRevealHand, outcome, gameOver = false, notices, scoreboard, lockedTokenForRound, round }: RealCasinoTableProps) {
   const stageRef = useRef<HTMLElement>(null)
+  const surfaceRef = useRef<HTMLDivElement>(null)
+  const { flights, receivingSeats, completeFlight } = useTokenFlights({ surfaceRef, players, round, active: phase === 'ranking' && Boolean(tokenPicker), color: roundColors[(round ?? 1) - 1] ?? 'red' })
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showRankings, setShowRankings] = useState(false)
 
@@ -116,7 +120,7 @@ export function RealCasinoTable({ players, board, playerId, phase, reveals, next
       </ol>
       <p>La plus forte en haut. Les égalités se départagent par la valeur des cartes (kickers) ; deux mains égales peuvent être dans n’importe quel ordre.</p>
     </div>}
-    <div className={`casino-table-surface ${tokenPicker ? 'casino-table-surface-picking' : ''} ${phase === 'result' && outcome ? `casino-table-surface-${outcome}` : ''}`}>
+    <div ref={surfaceRef} className={`casino-table-surface ${tokenPicker ? 'casino-table-surface-picking' : ''} ${phase === 'result' && outcome ? `casino-table-surface-${outcome}` : ''}`}>
       <div className="casino-table-felt" aria-hidden="true" />
       {opponents.map((player, index) => {
         const position = opponentSeats[Math.floor(index * opponentSeats.length / Math.max(opponents.length, 1))]
@@ -124,7 +128,7 @@ export function RealCasinoTable({ players, board, playerId, phase, reveals, next
         const cardsAreVisible = phase !== 'reveal' && phase !== 'result' && hasRevealed
         const isTheirTurn = phase === 'reveal' && nextPlayerId === player.id
 
-        return <article key={player.id} className="casino-seat" style={{ left: `${position.left}%`, top: `${position.top}%` }} aria-label={`${player.name}${isTheirTurn ? ', c’est à son tour de révéler' : ''}`}>
+        return <article key={player.id} className={`casino-seat ${receivingSeats[player.id] ? 'is-receiving-token' : ''}`} style={{ left: `${position.left}%`, top: `${position.top}%` }} aria-label={`${player.name}${isTheirTurn ? ', c’est à son tour de révéler' : ''}`}>
           <div className="casino-seat-name">{player.name}</div>
           {!player.tokenPicks?.length && <span className="casino-seat-waiting">{phase === 'reveal' ? isTheirTurn ? 'À son tour' : 'Attend de révéler' : 'Prêt à classer'}</span>}
           <div className={`casino-pocket-cards ${hasRevealed ? 'casino-pocket-cards-revealed' : ''}`} aria-label={cardsAreVisible ? `Cartes de ${player.name}` : `Cartes cachées de ${player.name}`}>
@@ -142,7 +146,7 @@ export function RealCasinoTable({ players, board, playerId, phase, reveals, next
         if (!me) return null
         const hasRevealed = reveals.some((reveal) => reveal.playerId === me.id)
 
-        return <article className="casino-seat casino-seat-you" aria-label={`${me.name}, vous`}>
+        return <article className={`casino-seat casino-seat-you ${receivingSeats[me.id] ? 'is-receiving-token' : ''}`} aria-label={`${me.name}, vous`}>
           <div className="casino-seat-name">{me.name}<span>VOUS</span></div>
           <div className={`casino-pocket-cards casino-pocket-cards-own ${hasRevealed ? 'casino-pocket-cards-revealed' : ''}`} aria-label={hasRevealed ? 'Vos cartes sont affichées au centre de la table' : 'Vos cartes privées'}>
             {hasRevealed ? [0, 1].map((cardIndex) => <CardBack key={`${me.id}-back-${cardIndex}`}/>) : me.cards.map((value, cardIndex) => <Card key={`${me.id}-card-${cardIndex}-${value}`} value={value} small/>)}
@@ -171,6 +175,7 @@ export function RealCasinoTable({ players, board, playerId, phase, reveals, next
       </div>}
       {tokenPicker && <div className="casino-table-token-picker">{tokenPicker}</div>}
       {modifiers && <div className="casino-table-modifiers">{modifiers}</div>}
+      <TokenFlightLayer flights={flights} onDone={completeFlight}/>
     </div>
   </section>
 }
